@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>vECU Pipeline — End to End</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif;overflow:hidden;width:100vw;height:100vh}
+#stage{width:100vw;height:100vh;position:relative;background:#fff}
+
+/* LANE BACKGROUNDS */
+.lane{position:absolute;border-radius:14px;border:1.5px dashed #cdd5e0;background:#f8fafc}
+
+/* PHASE LABELS */
+.phase{position:absolute;font-size:9px;font-weight:700;letter-spacing:2px;color:#94a3b8;text-align:center}
+
+/* STEP BOXES */
+.step{
+  position:absolute;border-radius:10px;border:2px solid #e2e8f0;
+  background:#fff;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;text-align:center;padding:8px 6px;
+  opacity:0;transition:opacity .4s,box-shadow .4s,border-color .4s,transform .3s;
+  box-shadow:0 2px 8px rgba(0,0,0,.06);
+}
+.step.visible{opacity:1}
+.step.active{transform:scale(1.06);box-shadow:0 0 0 3px var(--ac),0 8px 24px rgba(0,0,0,.15)!important}
+.step-img{width:38px;height:38px;object-fit:contain;margin-bottom:4px}
+.step-title{font-size:10px;font-weight:700;color:#1e293b;line-height:1.3}
+.step-sub{font-size:8px;color:#64748b;margin-top:2px;line-height:1.3}
+
+/* AWS SERVICE BOXES — orange style */
+.aws-box{background:linear-gradient(135deg,#fff8f0,#fff);border-color:#ff9900}
+.aws-box .step-title{color:#232f3e}
+
+/* CONNECTORS */
+#svg-layer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+
+/* PACKET DOT */
+.pkt{position:absolute;border-radius:50%;pointer-events:none;z-index:20;transition:none}
+
+/* PROGRESS */
+#prog-wrap{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);width:640px}
+#prog-bar{height:5px;background:#e2e8f0;border-radius:10px;overflow:hidden}
+#prog-fill{height:100%;width:0%;background:linear-gradient(90deg,#ff9900,#00a8e0);transition:width .5s;border-radius:10px}
+#prog-label{text-align:center;font-size:11px;color:#475569;margin-top:6px;font-weight:500;letter-spacing:.3px}
+
+/* CONTROLS */
+#ctrls{position:absolute;bottom:14px;right:20px;display:flex;gap:8px}
+.btn{background:#1e293b;color:#fff;border:none;font-size:11px;padding:6px 16px;border-radius:6px;cursor:pointer;font-weight:600;letter-spacing:.5px;transition:.2s}
+.btn:hover{background:#334155}
+.btn.play{background:#ff9900;color:#232f3e}
+.btn.play:hover{background:#e68900}
+
+/* TITLE */
+#main-title{position:absolute;top:12px;left:50%;transform:translateX(-50%);
+  font-size:15px;font-weight:800;color:#1e293b;letter-spacing:1px;white-space:nowrap;text-align:center}
+#main-sub{position:absolute;top:32px;left:50%;transform:translateX(-50%);
+  font-size:9px;color:#94a3b8;letter-spacing:1px;white-space:nowrap}
+
+/* VPC BOX */
+#vpc-box{position:absolute;border:2px solid #7c3aed;border-radius:12px;background:rgba(124,58,237,.04);
+  opacity:0;transition:opacity .5s}
+#iam-box{position:absolute;border:2px solid #dc2626;border-radius:8px;background:rgba(220,38,38,.05);
+  opacity:0;transition:opacity .5s;display:flex;align-items:center;justify-content:center;gap:4px;padding:4px 8px}
+</style>
+</head>
+<body>
+<div id="stage">
+
+<div id="main-title">END-TO-END EMULATOR PIPELINE OVERVIEW</div>
+<div id="main-sub">vECU Cloud HIL Bench · Capgemini Engineering · AI-Powered ADAS Testing Platform</div>
+
+<!-- LANE BACKGROUNDS -->
+<div class="lane" id="lane1" style="left:10px;top:54px;width:200px;height:510px;opacity:0;transition:opacity .5s"></div>
+<div class="lane" id="lane2" style="left:218px;top:54px;width:180px;height:510px;opacity:0;transition:opacity .5s"></div>
+
+<!-- VPC BOX -->
+<div id="vpc-box" style="left:406px;top:54px;width:400px;height:374px">
+  <div style="position:absolute;top:-10px;left:10px;background:#fff;padding:0 6px;font-size:9px;font-weight:700;color:#7c3aed;display:flex;align-items:center;gap:4px">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/32px-Amazon_Web_Services_Logo.svg.png" style="width:14px;height:9px;object-fit:contain"/>
+    Amazon Virtual Private Cloud
+  </div>
+  <div style="position:absolute;top:10px;left:10px;border:1.5px solid #0ea5e9;border-radius:8px;background:rgba(14,165,233,.04);width:180px;height:100px;display:flex;align-items:center;justify-content:center">
+    <div style="font-size:8px;color:#0369a1;font-weight:600;text-align:center">🔒 Private Subnet<br><span style="font-weight:400;color:#64748b">Isolated network</span></div>
+  </div>
+</div>
+
+<!-- IAM BOX -->
+<div id="iam-box" style="left:762px;top:58px;width:90px;height:36px">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/32px-Amazon_Web_Services_Logo.svg.png" style="width:18px;height:11px;object-fit:contain"/>
+  <div style="font-size:8px;font-weight:700;color:#dc2626">Amazon IAM</div>
+</div>
+
+<!-- SVG CONNECTORS -->
+<svg id="svg-layer">
+<defs>
+  <marker id="ah-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+    <path d="M1 1L9 5L1 9" fill="none" stroke="#ff9900" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <marker id="ah-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+    <path d="M1 1L9 5L1 9" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <marker id="ah-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+    <path d="M1 1L9 5L1 9" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <marker id="ah-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+    <path d="M1 1L9 5L1 9" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <marker id="ah-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+    <path d="M1 1L9 5L1 9" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <marker id="ah-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+    <path d="M1 1L9 5L1 9" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+</defs>
+
+<!-- MATLAB → C++ (commit) -->
+<path id="p-matlab-cpp" d="M 111 165 L 111 198" stroke="#94a3b8" stroke-width="1.5" fill="none" stroke-dasharray="5 3" marker-end="url(#ah-gray)" opacity="0"/>
+<text id="l-matlab-cpp" x="116" y="184" font-size="8" fill="#64748b" opacity="0" font-style="italic" font-weight="600">Commit</text>
+
+<!-- C++ → Docker (commit) -->
+<path id="p-cpp-docker" d="M 111 278 L 111 320 L 265 320 L 265 248" stroke="#94a3b8" stroke-width="1.5" fill="none" stroke-dasharray="5 3" marker-end="url(#ah-gray)" opacity="0"/>
+<text id="l-cpp-docker" x="180" y="316" font-size="8" fill="#64748b" opacity="0" font-style="italic" font-weight="600">Commit</text>
+
+<!-- GitHub → Docker (push) -->
+<path id="p-github-docker" d="M 65 278 L 65 310 L 265 310 L 265 248" stroke="#94a3b8" stroke-width="1.5" fill="none" stroke-dasharray="5 3" marker-end="url(#ah-gray)" opacity="0"/>
+<text id="l-github-docker" x="130" y="306" font-size="8" fill="#64748b" opacity="0" font-style="italic" font-weight="600">Push</text>
+
+<!-- Python → Docker -->
+<path id="p-python-docker" d="M 157 278 L 157 320 L 265 320 L 265 250" stroke="#94a3b8" stroke-width="1.5" fill="none" stroke-dasharray="5 3" marker-end="url(#ah-gray)" opacity="0"/>
+
+<!-- Docker → CodeBuild (push) -->
+<path id="p-docker-build" d="M 305 195 L 380 195" stroke="#0ea5e9" stroke-width="2" fill="none" marker-end="url(#ah-blue)" opacity="0"/>
+<text id="l-docker-build" x="328" y="190" font-size="8" fill="#0369a1" opacity="0" font-weight="700">Push</text>
+
+<!-- CodeBuild → ECR (push) -->
+<path id="p-build-ecr" d="M 476 195 L 520 195" stroke="#ff9900" stroke-width="2" fill="none" marker-end="url(#ah-orange)" opacity="0"/>
+
+<!-- ECR → ECS (deploy) -->
+<path id="p-ecr-ecs" d="M 596 162 L 596 120 L 680 120 L 680 158" stroke="#ff9900" stroke-width="2" fill="none" marker-end="url(#ah-orange)" opacity="0"/>
+<text id="l-ecr-ecs" x="620" y="115" font-size="8" fill="#b45309" opacity="0" font-style="italic" font-weight="700">Deploy</text>
+
+<!-- ECS → Fargate -->
+<path id="p-ecs-fargate" d="M 730 182 L 780 182" stroke="#ff9900" stroke-width="2" fill="none" marker-end="url(#ah-orange)" opacity="0"/>
+
+<!-- Fargate → Tasks (4 containers) -->
+<path id="p-fargate-tasks" d="M 805 212 L 805 250 L 490 250 L 490 290" stroke="#ff9900" stroke-width="1.5" fill="none" stroke-dasharray="4 3" opacity="0"/>
+
+<!-- Python/AI → IoT Core -->
+<path id="p-ai-iot" d="M 157 390 L 460 390 L 460 330" stroke="#a855f7" stroke-width="1.5" fill="none" stroke-dasharray="4 3" marker-end="url(#ah-purple)" opacity="0"/>
+<text id="l-ai-iot" x="270" y="386" font-size="8" fill="#7e22ce" opacity="0" font-style="italic" font-weight="700">Pull (IA Model)</text>
+
+<!-- IoT → S3 -->
+<path id="p-iot-s3" d="M 530 340 L 530 400 L 580 400" stroke="#22c55e" stroke-width="1.5" fill="none" stroke-dasharray="4 3" marker-end="url(#ah-green)" opacity="0"/>
+<text id="l-iot-s3" x="534" y="374" font-size="8" fill="#15803d" opacity="0" font-weight="700">Scenarios</text>
+
+<!-- S3 → OTA -->
+<path id="p-s3-ota" d="M 660 415 L 710 415" stroke="#22c55e" stroke-width="2" fill="none" marker-end="url(#ah-green)" opacity="0"/>
+
+<!-- Fargate → EC2 OTA Backend -->
+<path id="p-fargate-ec2" d="M 805 212 L 860 212 L 860 370 L 800 370" stroke="#ff9900" stroke-width="1.5" fill="none" stroke-dasharray="4 3" opacity="0"/>
+
+<!-- EC2 → OTA -->
+<path id="p-ec2-ota" d="M 756 385 L 756 405" stroke="#ff9900" stroke-width="2" fill="none" marker-end="url(#ah-orange)" opacity="0"/>
+
+<!-- OTA → Edge (OTA delivery) -->
+<path id="p-ota-edge" d="M 810 415 L 858 415" stroke="#ef4444" stroke-width="2" fill="none" marker-end="url(#ah-red)" opacity="0"/>
+<text id="l-ota-edge" x="818" y="410" font-size="8" fill="#b91c1c" opacity="0" font-weight="700">OTA</text>
+
+<!-- S3 → Edge (scenarios) -->
+<path id="p-s3-edge" d="M 660 430 L 875 430 L 875 450" stroke="#22c55e" stroke-width="1.5" fill="none" stroke-dasharray="4 3" marker-end="url(#ah-green)" opacity="0"/>
+<text id="l-s3-edge" x="740" y="426" font-size="8" fill="#15803d" opacity="0" font-weight="700">Scenarios</text>
+
+<!-- Camera → Jetson -->
+<path id="p-cam-jetson" d="M 920 510 L 920 476" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#ah-gray)" opacity="0"/>
+
+</svg>
+
+<!-- ═══════════════════════════════════════════════
+     STEP BOXES
+════════════════════════════════════════════════ -->
+
+<!-- 1. MATLAB/Simulink -->
+<div class="step" id="s-matlab" style="--ac:#e65100;left:36px;top:68px;width:150px;height:90px">
+  <img class="step-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Simple_Icons_MATLAB.svg/64px-Simple_Icons_MATLAB.svg.png" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+  <div style="display:none;font-size:28px">📐</div>
+  <div class="step-title">MATLAB &amp; Simulink</div>
+  <div class="step-sub">LPA model design<br>Simulink Coder ERT</div>
+</div>
+
+<!-- 2. C++ -->
+<div class="step" id="s-cpp" style="--ac:#7c3aed;left:36px;top:200px;width:150px;height:72px">
+  <div style="font-size:30px;margin-bottom:4px">⚙️</div>
+  <div class="step-title">C / C++ Code</div>
+  <div class="step-sub">LPA_VCodeGen.c · BSW<br>Simulink Coder output</div>
+</div>
+
+<!-- 3. GitHub -->
+<div class="step" id="s-github" style="--ac:#1e293b;left:18px;top:280px;width:86px;height:72px">
+  <svg width="32" height="32" viewBox="0 0 98 96" style="margin-bottom:4px"><path fill="#1e293b" d="M48.854 0C21.839 0 0 22 0 49.217c0 21.756 13.993 40.172 33.405 46.69 2.427.49 3.316-1.059 3.316-2.362 0-1.141-.08-5.052-.08-9.127-13.59 2.934-16.42-5.867-16.42-5.867-2.184-5.704-5.42-7.17-5.42-7.17-4.448-3.015.324-3.015.324-3.015 4.934.326 7.523 5.052 7.523 5.052 4.367 7.496 11.404 5.378 14.235 4.074.404-3.178 1.699-5.378 3.074-6.6-10.839-1.141-22.243-5.378-22.243-24.283 0-5.378 1.94-9.778 5.014-13.2-.485-1.222-2.184-6.275.486-13.038 0 0 4.125-1.304 13.426 5.052a46.97 46.97 0 0 1 12.214-1.63c4.125 0 8.33.571 12.213 1.63 9.302-6.356 13.427-5.052 13.427-5.052 2.67 6.763.97 11.816.485 13.038 3.155 3.422 5.015 7.822 5.015 13.2 0 18.905-11.404 23.06-22.324 24.283 1.78 1.548 3.316 4.481 3.316 9.126 0 6.6-.08 11.897-.08 13.526 0 1.304.89 2.853 3.316 2.364 19.412-6.52 33.405-24.935 33.405-46.691C97.707 22 75.788 0 48.854 0z"/></svg>
+  <div class="step-title">GitHub</div>
+  <div class="step-sub">Source control<br>Push &amp; commit</div>
+</div>
+
+<!-- 4. Python / AI -->
+<div class="step" id="s-python" style="--ac:#f59e0b;left:118px;top:280px;width:86px;height:72px">
+  <svg width="32" height="32" viewBox="0 0 128 128" style="margin-bottom:4px"><linearGradient id="py1" x1="70.252" y1="1237.476" x2="170.659" y2="1356.947" gradientUnits="userSpaceOnUse" gradientTransform="matrix(.563 0 0 .568 -29.215 -702.736)"><stop offset="0" stop-color="#5A9FD4"/><stop offset="1" stop-color="#306998"/></linearGradient><linearGradient id="py2" x1="209.474" y1="1098.811" x2="173.62" y2="1149.537" gradientUnits="userSpaceOnUse" gradientTransform="matrix(.563 0 0 .568 -29.215 -702.736)"><stop offset="0" stop-color="#FFD43B"/><stop offset="1" stop-color="#FFE873"/></linearGradient><path fill="url(#py1)" d="M63.391 1.988c-4.222.02-8.252.379-11.8 1.007-10.45 1.846-12.346 5.71-12.346 12.837v9.411h24.693v3.137H29.977c-7.176 0-13.46 4.313-15.426 12.521-2.268 9.405-2.368 15.275 0 25.096 1.755 7.311 5.947 12.519 13.124 12.519h8.491V69.234c0-8.151 7.051-15.34 15.426-15.34h24.665c6.866 0 12.346-5.654 12.346-12.548V15.833c0-6.693-5.646-11.72-12.346-12.837-4.244-.706-8.645-1.027-12.866-1.008zM50.037 9.557c2.55 0 4.634 2.117 4.634 4.721 0 2.593-2.083 4.69-4.634 4.69-2.56 0-4.633-2.097-4.633-4.69-.001-2.604 2.073-4.721 4.633-4.721z"/><path fill="url(#py2)" d="M91.682 28.38v10.966c0 8.5-7.208 15.655-15.426 15.655H51.591c-6.756 0-12.346 5.783-12.346 12.549v23.515c0 6.691 5.818 10.628 12.346 12.547 7.816 2.297 15.312 2.713 24.665 0 6.216-1.801 12.346-5.423 12.346-12.547v-9.412H63.938v-3.138h37.012c7.176 0 9.852-5.005 12.348-12.519 2.578-7.735 2.467-15.174 0-25.096-1.774-7.145-5.161-12.521-12.348-12.521h-9.268zM77.809 87.927c2.561 0 4.634 2.097 4.634 4.692 0 2.602-2.074 4.719-4.634 4.719-2.55 0-4.633-2.117-4.633-4.719 0-2.595 2.083-4.692 4.633-4.692z"/></svg>
+  <div class="step-title">Python + AI</div>
+  <div class="step-sub">LLM · Scenarios<br>Dashboard</div>
+</div>
+
+<!-- 5. Docker Build -->
+<div class="step" id="s-docker" style="--ac:#0ea5e9;left:218px;top:158px;width:148px;height:86px">
+  <svg width="38" height="28" viewBox="0 0 100 72" style="margin-bottom:4px"><rect x="1" y="32" width="14" height="12" rx="2" fill="#0db7ed"/><rect x="17" y="32" width="14" height="12" rx="2" fill="#0db7ed"/><rect x="33" y="32" width="14" height="12" rx="2" fill="#0db7ed"/><rect x="49" y="32" width="14" height="12" rx="2" fill="#0db7ed"/><rect x="17" y="18" width="14" height="12" rx="2" fill="#0db7ed"/><rect x="33" y="18" width="14" height="12" rx="2" fill="#0db7ed"/><rect x="33" y="4" width="14" height="12" rx="2" fill="#0db7ed"/><path d="M74 36c-1-6-6-8-11-7-1-4-5-6-9-5" stroke="#0db7ed" stroke-width="2" fill="none"/><ellipse cx="78" cy="38" rx="8" ry="6" fill="#0db7ed" opacity=".5"/><path d="M2 46 Q30 58 65 46" stroke="#0db7ed" stroke-width="2" fill="none"/></svg>
+  <div class="step-title">Docker Image Built</div>
+  <div class="step-sub">firmware_bsw compiled<br>Multi-arch x86 / ARM64</div>
+</div>
+
+<!-- 6. AWS CodeBuild + CodePipeline -->
+<div class="step aws-box" id="s-build" style="--ac:#ff9900;left:380px;top:162px;width:136px;height:80px">
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/64px-Amazon_Web_Services_Logo.svg.png" style="width:28px;height:17px;object-fit:contain"/>
+    <div style="font-size:20px">🔨</div>
+  </div>
+  <div class="step-title">CI/CD Pipeline</div>
+  <div class="step-sub">aws CodeBuild<br>aws CodePipeline</div>
+</div>
+
+<!-- 7. Amazon ECR -->
+<div class="step aws-box" id="s-ecr" style="--ac:#ff9900;left:522px;top:162px;width:130px;height:80px">
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/64px-Amazon_Web_Services_Logo.svg.png" style="width:28px;height:17px;object-fit:contain"/>
+    <div style="font-size:20px">📦</div>
+  </div>
+  <div class="step-title">Amazon ECR</div>
+  <div class="step-sub">Container registry<br>Docker image store</div>
+</div>
+
+<!-- 8. Amazon ECS -->
+<div class="step aws-box" id="s-ecs" style="--ac:#ff9900;left:634px;top:158px;width:130px;height:80px">
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/64px-Amazon_Web_Services_Logo.svg.png" style="width:28px;height:17px;object-fit:contain"/>
+    <div style="font-size:18px">☁️</div>
+  </div>
+  <div class="step-title">Amazon ECS</div>
+  <div class="step-sub">Container orchestration<br>VPC private subnet</div>
+</div>
+
+<!-- 9. Fargate + Tasks -->
+<div class="step aws-box" id="s-fargate" style="--ac:#ff9900;left:770px;top:158px;width:82px;height:80px">
+  <div style="font-size:9px;font-weight:700;color:#ff9900;margin-bottom:3px">Amazon</div>
+  <div style="font-size:16px;font-weight:800;color:#232f3e">Fargate</div>
+  <div style="display:flex;gap:2px;margin-top:4px">
+    <div style="width:14px;height:18px;background:#ff9900;border-radius:2px;opacity:.7"></div>
+    <div style="width:14px;height:18px;background:#ff9900;border-radius:2px;opacity:.7"></div>
+    <div style="width:14px;height:18px;background:#ff9900;border-radius:2px;opacity:.7"></div>
+    <div style="width:14px;height:18px;background:#ff9900;border-radius:2px;opacity:.7"></div>
+  </div>
+</div>
+
+<!-- 10. AWS IoT Core -->
+<div class="step aws-box" id="s-iot" style="--ac:#a855f7;left:415px;top:278px;width:148px;height:78px">
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/64px-Amazon_Web_Services_Logo.svg.png" style="width:28px;height:17px;object-fit:contain"/>
+    <div style="font-size:20px">📡</div>
+  </div>
+  <div class="step-title">AWS IoT Core</div>
+  <div class="step-sub">MQTT · Scenario dispatch<br>Device telemetry</div>
+</div>
+
+<!-- 11. S3 + Other Artifacts -->
+<div class="step aws-box" id="s-s3" style="--ac:#22c55e;left:415px;top:378px;width:240px;height:78px">
+  <div style="display:flex;align-items:center;gap:8px">
+    <div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/64px-Amazon_Web_Services_Logo.svg.png" style="width:28px;height:17px;object-fit:contain"/>
+        <div style="font-size:16px">🪣</div>
+      </div>
+      <div class="step-title">S3, Other Artifacts</div>
+      <div class="step-sub">Scenarios · Results · Logs<br>Stored in AWS (ECR / S3)</div>
+    </div>
+  </div>
+</div>
+
+<!-- 12. EC2 OTA Backend -->
+<div class="step aws-box" id="s-ec2" style="--ac:#ff9900;left:660px;top:340px;width:130px;height:78px">
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/64px-Amazon_Web_Services_Logo.svg.png" style="width:28px;height:17px;object-fit:contain"/>
+    <div style="font-size:18px">🖥️</div>
+  </div>
+  <div class="step-title">EC2 (OTA Backend)</div>
+  <div class="step-sub">Container versioning<br>OTA orchestration</div>
+</div>
+
+<!-- 13. OTA Service -->
+<div class="step" id="s-ota" style="--ac:#ef4444;left:660px;top:378px;width:130px;height:78px;border-color:#ef4444;background:#fff5f5">
+  <div style="font-size:26px;margin-bottom:4px">🔄</div>
+  <div class="step-title" style="color:#b91c1c">OTA Service</div>
+  <div class="step-sub">Container image pull<br>Over-the-air update</div>
+</div>
+
+<!-- 14. NVIDIA Edge Platform -->
+<div class="step" id="s-nvidia" style="--ac:#76b900;left:858px;top:68px;width:130px;height:180px;border-color:#76b900;background:#f0fff0">
+  <svg width="60" height="20" viewBox="0 0 200 68" style="margin-bottom:6px"><path d="M8 8h12v52H8zm16 0h8l20 36V8h12v52h-8L36 24v36H20zm44 0h28c8 0 14 6 14 14v24c0 8-6 14-14 14H68zm12 10v32h14c2 0 4-2 4-4V22c0-2-2-4-4-4zm38-10h12v52h-12zm18 0h12l14 34 14-34h12l-20 52h-12zm56 0h12v52h-12z" fill="#76b900"/></svg>
+  <div class="step-title" style="color:#365314;font-size:9px">NVIDIA Edge Platform</div>
+  <div style="display:flex;flex-direction:column;gap:4px;margin-top:6px;width:100%">
+    <div style="background:#76b900;color:#fff;border-radius:4px;padding:3px 6px;font-size:8px;font-weight:700">ECU — Vehicle ECU</div>
+    <div style="background:#166534;color:#fff;border-radius:4px;padding:3px 6px;font-size:8px;font-weight:700">Jetson Nano</div>
+    <div style="background:#1e293b;color:#76b900;border-radius:4px;padding:3px 6px;font-size:8px;font-weight:700">Edge Platform</div>
+  </div>
+</div>
+
+<!-- 15. Jetson Nano (bottom) -->
+<div class="step" id="s-jetson" style="--ac:#76b900;left:858px;top:434px;width:130px;height:120px;border-color:#76b900;background:#f0fff0">
+  <div style="font-size:22px;margin-bottom:4px">🚗</div>
+  <div class="step-title" style="color:#365314">Jetson Nano</div>
+  <div class="step-sub" style="color:#4d7c0f">• Reads Lines<br>• Cameras<br>• Scenarios</div>
+</div>
+
+<!-- 16. Camera -->
+<div class="step" id="s-camera" style="--ac:#64748b;left:858px;top:510px;width:130px;height:52px;border-color:#94a3b8">
+  <div style="font-size:20px">📷</div>
+  <div class="step-title">Camera</div>
+</div>
+
+<!-- PROGRESS BAR -->
+<div id="prog-wrap">
+  <div id="prog-bar"><div id="prog-fill"></div></div>
+  <div id="prog-label">Press ▶ PLAY to start the pipeline animation</div>
+</div>
+
+<!-- CONTROLS -->
+<div id="ctrls">
+  <button class="btn play" onclick="playAll()">▶ PLAY</button>
+  <button class="btn" onclick="nextStep()">NEXT ▶</button>
+  <button class="btn" onclick="resetAll()">↺ RESET</button>
+</div>
+
+</div><!-- #stage -->
+
+<script>
+const STEPS = [
+  {
+    ids:['s-matlab'],
+    paths:[],
+    label:'Step 1 — MATLAB/Simulink: LPA model designed, Simulink Coder generates C code'
+  },
+  {
+    ids:['s-cpp'],
+    paths:['p-matlab-cpp','l-matlab-cpp'],
+    label:'Step 2 — C/C++ code generated: LPA_VCodeGen.c + BSW layer ready to compile'
+  },
+  {
+    ids:['s-github','s-python'],
+    paths:['p-cpp-docker','l-cpp-docker'],
+    label:'Step 3 — GitHub commit + Python scripts pushed to repository'
+  },
+  {
+    ids:['s-docker'],
+    paths:['p-github-docker','l-github-docker','p-python-docker'],
+    label:'Step 4 — Docker image built: firmware_bsw compiled, packaged for x86 and ARM64'
+  },
+  {
+    ids:['s-build'],
+    paths:['p-docker-build','l-docker-build'],
+    label:'Step 5 — AWS CI/CD Pipeline: CodeBuild compiles and CodePipeline orchestrates the build'
+  },
+  {
+    ids:['s-ecr'],
+    paths:['p-build-ecr'],
+    label:'Step 6 — Amazon ECR: Docker image pushed and stored in the container registry'
+  },
+  {
+    ids:['s-ecs'],
+    paths:['p-ecr-ecs','l-ecr-ecs'],
+    label:'Step 7 — Amazon ECS deploys the image inside the private VPC subnet'
+  },
+  {
+    ids:['s-fargate'],
+    paths:['p-ecs-fargate'],
+    label:'Step 8 — AWS Fargate runs the vECU containers serverlessly — no server management'
+  },
+  {
+    ids:['s-iot'],
+    paths:['p-ai-iot','l-ai-iot'],
+    label:'Step 9 — AWS IoT Core: AI-generated scenarios dispatched via MQTT to vECU'
+  },
+  {
+    ids:['s-s3'],
+    paths:['p-iot-s3','l-iot-s3'],
+    label:'Step 10 — Amazon S3: scenarios, results, logs and artifacts stored securely'
+  },
+  {
+    ids:['s-ec2'],
+    paths:['p-fargate-ec2'],
+    label:'Step 11 — EC2 OTA Backend: manages container image versions for edge devices'
+  },
+  {
+    ids:['s-ota'],
+    paths:['p-ec2-ota','p-s3-ota'],
+    label:'Step 12 — OTA Service: container image delivered over-the-air to edge platform'
+  },
+  {
+    ids:['s-nvidia'],
+    paths:['p-ota-edge','l-ota-edge'],
+    label:'Step 13 — NVIDIA Edge Platform: ECU + Jetson Nano receive the OTA update'
+  },
+  {
+    ids:['s-jetson','s-camera'],
+    paths:['p-s3-edge','l-s3-edge','p-cam-jetson'],
+    label:'Step 14 ✅ — Jetson Nano executes ADAS firmware: Camera · LiDAR · CAN · Real scenarios'
+  },
+];
+
+const TOTAL = STEPS.length;
+let current = -1;
+let autoTimer = null;
+
+function getSVGPoint(pathId){
+  const el = document.getElementById(pathId);
+  if(!el) return null;
+  const svg = document.getElementById('svg-layer');
+  const svgRect = svg.getBoundingClientRect();
+  const stageRect = document.getElementById('stage').getBoundingClientRect();
+  return {el, svgRect, stageRect};
+}
+
+function animatePacket(pathId, color){
+  const path = document.getElementById(pathId);
+  if(!path || path.tagName !== 'path') return;
+  const len = path.getTotalLength();
+  const dot = document.createElement('div');
+  dot.className = 'pkt';
+  dot.style.cssText = `width:10px;height:10px;background:${color};box-shadow:0 0 8px 2px ${color};`;
+  document.getElementById('stage').appendChild(dot);
+  const svg = document.getElementById('svg-layer');
+  const svgRect = svg.getBoundingClientRect();
+  const stageRect = document.getElementById('stage').getBoundingClientRect();
+  let start = null;
+  const dur = 800;
+  function frame(ts){
+    if(!start) start = ts;
+    const t = Math.min((ts-start)/dur, 1);
+    const ease = t<.5 ? 2*t*t : -1+(4-2*t)*t;
+    const pt = path.getPointAtLength(ease*len);
+    dot.style.left = (pt.x + svgRect.left - stageRect.left - 5)+'px';
+    dot.style.top  = (pt.y + svgRect.top  - stageRect.top  - 5)+'px';
+    dot.style.opacity = t<.1?t*10:t>.9?(1-t)*10:1;
+    if(t<1) requestAnimationFrame(frame);
+    else dot.remove();
+  }
+  dot.style.opacity='0';
+  requestAnimationFrame(frame);
+}
+
+function showStep(idx){
+  if(idx<0||idx>=TOTAL) return;
+  current=idx;
+  const s = STEPS[idx];
+
+  // Show all boxes up to current
+  for(let i=0;i<=idx;i++){
+    STEPS[i].ids.forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.classList.add('visible');
+    });
+  }
+
+  // Remove previous active
+  document.querySelectorAll('.step.active').forEach(e=>e.classList.remove('active'));
+
+  // Activate current boxes
+  s.ids.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){ el.classList.add('active'); }
+  });
+
+  // Show VPC and IAM after step 5
+  if(idx>=5){
+    document.getElementById('vpc-box').style.opacity='1';
+    document.getElementById('iam-box').style.opacity='1';
+  }
+
+  // Show connectors
+  s.paths.forEach(pid=>{
+    const el=document.getElementById(pid);
+    if(el) el.style.opacity='1';
+  });
+
+  // Animate packets on path elements only
+  const colors=['#ff9900','#0ea5e9','#22c55e','#a855f7','#ef4444','#76b900','#94a3b8'];
+  s.paths.filter(p=>p.startsWith('p-')).forEach((pid,i)=>{
+    setTimeout(()=>animatePacket(pid, colors[i%colors.length]), i*120);
+  });
+
+  // Progress
+  document.getElementById('prog-fill').style.width=((idx+1)/TOTAL*100)+'%';
+  document.getElementById('prog-label').textContent=s.label;
+}
+
+function nextStep(){
+  if(current<TOTAL-1) showStep(current+1);
+}
+
+function playAll(){
+  resetAll();
+  let i=0;
+  function go(){
+    showStep(i); i++;
+    if(i<TOTAL) autoTimer=setTimeout(go,1600);
+  }
+  go();
+}
+
+function resetAll(){
+  if(autoTimer){clearTimeout(autoTimer);autoTimer=null;}
+  current=-1;
+  document.querySelectorAll('.step').forEach(e=>{e.classList.remove('visible','active');});
+  document.querySelectorAll('[id^="p-"],[id^="l-"]').forEach(e=>e.style.opacity='0');
+  document.querySelectorAll('.pkt').forEach(e=>e.remove());
+  document.getElementById('vpc-box').style.opacity='0';
+  document.getElementById('iam-box').style.opacity='0';
+  document.getElementById('prog-fill').style.width='0%';
+  document.getElementById('prog-label').textContent='Press ▶ PLAY to start the pipeline animation';
+}
+</script>
+</body>
+</html>
