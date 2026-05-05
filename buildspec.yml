@@ -3,7 +3,7 @@ version: 0.2
 phases:
   install:
     commands:
-      - apt-get update && apt-get install -y gcc make cmake
+      - echo Installation des dependances...
 
   pre_build:
     commands:
@@ -14,17 +14,19 @@ phases:
 
   build:
     commands:
-      - echo Compilation vECU...
-      - make all -C src/
-      - echo Build image Docker...
+      - echo Build image Docker pipeline_animation_v2...
       - docker build -t $ECR_REPO_URI:$IMAGE_TAG .
       - docker tag $ECR_REPO_URI:$IMAGE_TAG $ECR_REPO_URI:latest
 
   post_build:
     commands:
+      - echo Push image vers ECR...
       - docker push $ECR_REPO_URI:$IMAGE_TAG
       - docker push $ECR_REPO_URI:latest
-      - aws s3 cp build-report/ s3://$S3_RESULTS_BUCKET/build-artifacts/$IMAGE_TAG/ --recursive
+      - echo Build termine - image disponible dans ECR
+      - printf '[{"name":"vecu-container","imageUri":"%s:%s"}]'
+          $ECR_REPO_URI $IMAGE_TAG > imagedefinitions.json
 
 artifacts:
-  files: [ '**/*' ]
+  files:
+    - imagedefinitions.json
