@@ -19,33 +19,33 @@ phases:
       - docker tag $ECR_REPO_URI:$IMAGE_TAG $ECR_REPO_URI:latest
 
   post_build:
-  commands:
-    - docker push $ECR_REPO_URI:$IMAGE_TAG
-    - docker push $ECR_REPO_URI:latest
+    commands:
+      - docker push $ECR_REPO_URI:$IMAGE_TAG
+      - docker push $ECR_REPO_URI:latest
 
-    # Mettre à jour la Task Definition avec le nouveau tag
-    - |
-      TASK_DEF_JSON=$(aws ecs describe-task-definition \
-        --task-definition vecu-task \
-        --query 'taskDefinition' \
-        --output json)
+      # Mettre à jour la Task Definition avec le nouveau tag
+      - |
+        TASK_DEF_JSON=$(aws ecs describe-task-definition \
+          --task-definition vecu-task \
+          --query 'taskDefinition' \
+          --output json)
 
-      NEW_TASK_DEF=$(echo $TASK_DEF_JSON | python3 -c "
-      import json, sys
-      td = json.load(sys.stdin)
-      for c in td['containerDefinitions']:
-          if c['name'] == 'vecu-container':
-              c['image'] = '$ECR_REPO_URI:$IMAGE_TAG'
-      for key in ['taskDefinitionArn','revision','status','requiresAttributes',
-                  'compatibilities','registeredAt','registeredBy']:
-          td.pop(key, None)
-      print(json.dumps(td))
-      ")
+        NEW_TASK_DEF=$(echo $TASK_DEF_JSON | python3 -c "
+        import json, sys
+        td = json.load(sys.stdin)
+        for c in td['containerDefinitions']:
+            if c['name'] == 'vecu-container':
+                c['image'] = '$ECR_REPO_URI:$IMAGE_TAG'
+        for key in ['taskDefinitionArn','revision','status','requiresAttributes',
+                    'compatibilities','registeredAt','registeredBy']:
+            td.pop(key, None)
+        print(json.dumps(td))
+        ")
 
-      aws ecs register-task-definition --cli-input-json "$NEW_TASK_DEF"
-      echo "Task Definition mise a jour avec image $IMAGE_TAG"
+        aws ecs register-task-definition --cli-input-json "$NEW_TASK_DEF"
+        echo "Task Definition mise a jour avec image $IMAGE_TAG"
 
-    - printf '[{"name":"vecu-container","imageUri":"%s:%s"}]' $ECR_REPO_URI $IMAGE_TAG > imagedefinitions.json
+      - printf '[{"name":"vecu-container","imageUri":"%s:%s"}]' $ECR_REPO_URI $IMAGE_TAG > imagedefinitions.json
 
 artifacts:
   files:
