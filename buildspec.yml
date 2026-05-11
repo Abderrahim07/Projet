@@ -1,62 +1,93 @@
 version: 0.2
 
-env:
-  variables:
-    AWS_DEFAULT_REGION: eu-west-3
-
 phases:
   install:
     commands:
-      - echo "Installation des dépendances..."
+      - echo Installation des dependances...
 
   pre_build:
     commands:
-      - echo "Connexion à ECR..."
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
+      - echo Connexion ECR...
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION |
+          docker login --username AWS --password-stdin $ECR_REPO_URI
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c1-8)
       - echo "Image tag = $IMAGE_TAG"
 
   build:
     commands:
-      - echo "Build image Docker..."
+      - echo Build image Docker...
       - docker build -t $ECR_REPO_URI:$IMAGE_TAG .
       - docker tag $ECR_REPO_URI:$IMAGE_TAG $ECR_REPO_URI:latest
 
   post_build:
     commands:
-      # 1. Push image vers ECR
-      - echo "Push vers ECR..."
+      # 1. Push image ECR
+      - echo Push vers ECR...
       - docker push $ECR_REPO_URI:$IMAGE_TAG
       - docker push $ECR_REPO_URI:latest
 
       # 2. Récupérer la Task Definition actuelle
-      - echo "Récupération de la Task Definition..."
-      - aws ecs describe-task-definition --region eu-west-3 --task-definition vecu-task --query "taskDefinition" --output json > current_task_def.json
+      - echo Recuperation Task Definition...
+      - |
+        aws ecs describe-task-definition \
+          --task-definition vecu-task \
+          --query 'taskDefinition' \
+          --output json > current_task_def.json
 
-      # 3. Créer une nouvelle révision (Python en une seule ligne)
-      - echo "Création nouvelle révision Task Definition..."
-      - python3 -c "import json; \
-td=json.load(open('current_task_def.json')); \
-new_image='${ECR_REPO_URI}:${IMAGE_TAG}'; \
-[ c.update({'image': new_image}) for c in td['containerDefinitions'] if c['name']=='vecu-container' ]; \
-[ td.pop(k,None) for k in ['taskDefinitionArn','revision','status','requiresAttributes','compatibilities','registeredAt','registeredBy'] ]; \
-json.dump(td, open('new_task_def.json','w'), indent=2)"
+      # 3. Créer nouvelle révision avec le nouveau tag image
+      - echo Creation nouvelle revision Task Definition...
+      - |
+        python3 -c "
+        import json, os
+
+        with open('current_task_def.json') as f:
+            td = json.load(f)
+
+        # Mettre à jour l'image du container
+        new_image = '${ECR_REPO_URI}:${IMAGE_TAG}'
+        for c in td['containerDefinitions']:
+            if c['name'] == 'vecu-container':
+                c['image'] = new_image
+                print(f'Image mise a jour: {new_image}')
+
+        # Supprimer les champs en lecture seule
+        for key in ['taskDefinitionArn', 'revision', 'status',
+                    'requiresAttributes', 'compatibilities',
+                    'registeredAt', 'registeredBy']:
+            td.pop(key, None)
+
+        with open('new_task_def.json', 'w') as f:
+            json.dump(td, f, indent=2, default=str)
+
+        print('new_task_def.json created')
+        "
 
       # 4. Enregistrer la nouvelle révision
-      - echo "Enregistrement nouvelle Task Definition..."
-      - NEW_REVISION=$(aws ecs register-task-definition --region eu-west-3 --cli-input-json file://new_task_def.json --query "taskDefinition.revision" --output text)
-      - echo "Nouvelle révision = $NEW_REVISION"
+      - echo Enregistrement nouvelle Task Definition...
+      - |
+        NEW_REVISION=$(aws ecs register-task-definition \
+          --cli-input-json file://new_task_def.json \
+          --query 'taskDefinition.revision' \
+          --output text)
+      - echo "Nouvelle revision = $NEW_REVISION"
 
-      # 5. Infos pour Lambda
-      - printf '{ "taskDefinition": "vecu-task:%s", "imageTag": "%s", "imageUri": "%s:%s" }' $NEW_REVISION $IMAGE_TAG $ECR_REPO_URI $IMAGE_TAG > deployment_info.json
+      # 5. Sauvegarder les infos pour la Lambda
+      - |
+        printf '{
+          "taskDefinition": "vecu-task:%s",
+          "imageTag": "%s",
+          "imageUri": "%s:%s"
+        }' $NEW_REVISION $IMAGE_TAG $ECR_REPO_URI $IMAGE_TAG > deployment_info.json
       - cat deployment_info.json
 
-      # 6. imagedefinitions.json
-      - printf '[{"name":"vecu-container","imageUri":"%s:%s"}]' $ECR_REPO_URI $IMAGE_TAG > imagedefinitions.json
+      # 6. Générer imagedefinitions.json pour ECS
+      - |
+        printf '[{"name":"vecu-container","imageUri":"%s:%s"}]' \
+          $ECR_REPO_URI $IMAGE_TAG > imagedefinitions.json
 
-      - echo "Build terminé — Task Definition vecu-task:$NEW_REVISION prête"
+      - echo "Build complete - Task Definition vecu-task:$NEW_REVISION prete"
 
 artifacts:
   files:
-    - deployment_info.json
     - imagedefinitions.json
+    - deployment_info.json
