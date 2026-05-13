@@ -8,379 +8,179 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
-/* ── RESET & BASE ─────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
 :root {
-  --bg:        #0A0D12;
-  --bg2:       #0F1318;
-  --bg3:       #151A22;
-  --bg4:       #1C232E;
-  --border:    rgba(255,255,255,.07);
-  --border2:   rgba(255,255,255,.12);
-  --accent:    #00D4FF;
-  --accent2:   #0099CC;
-  --green:     #00E5A0;
-  --amber:     #FFB547;
-  --red:       #FF5C5C;
-  --purple:    #A78BFA;
-  --text1:     #F0F4F8;
-  --text2:     #8A9BB0;
-  --text3:     #4A5568;
-  --mono:      'IBM Plex Mono', monospace;
-  --sans:      'IBM Plex Sans', sans-serif;
-  --radius:    6px;
-  --radius-lg: 10px;
+  --bg:#0A0D12; --bg2:#0F1318; --bg3:#151A22; --bg4:#1C232E;
+  --border:rgba(255,255,255,.07); --border2:rgba(255,255,255,.12);
+  --accent:#00D4FF; --accent2:#0099CC;
+  --green:#00E5A0; --amber:#FFB547; --red:#FF5C5C; --purple:#A78BFA;
+  --text1:#F0F4F8; --text2:#8A9BB0; --text3:#4A5568;
+  --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+  --radius:6px; --radius-lg:10px;
 }
-
-body {
-  font-family: var(--sans);
-  background: var(--bg);
-  color: var(--text1);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* ── GRID BACKGROUND ──────────────────────────────────────────────────────── */
+body { font-family:var(--sans); background:var(--bg); color:var(--text1); min-height:100vh; overflow-x:hidden; }
 body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(0,212,255,.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,212,255,.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none;
-  z-index: 0;
+  content:''; position:fixed; inset:0;
+  background-image: linear-gradient(rgba(0,212,255,.03) 1px,transparent 1px), linear-gradient(90deg,rgba(0,212,255,.03) 1px,transparent 1px);
+  background-size:40px 40px; pointer-events:none; z-index:0;
 }
-
-/* ── TOPBAR ───────────────────────────────────────────────────────────────── */
 .topbar {
-  position: sticky; top: 0; z-index: 100;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 28px;
-  height: 52px;
-  background: rgba(10,13,18,.92);
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border);
+  position:sticky; top:0; z-index:100;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 28px; height:52px;
+  background:rgba(10,13,18,.92); backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
 }
-
-.logo {
-  display: flex; align-items: center; gap: 10px;
-  font-family: var(--mono); font-size: 13px; font-weight: 600;
-  color: var(--accent); letter-spacing: .5px;
-}
-.logo-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 12px var(--accent);
-  animation: pulse 2s infinite;
-}
+.logo { display:flex; align-items:center; gap:10px; font-family:var(--mono); font-size:13px; font-weight:600; color:var(--accent); letter-spacing:.5px; }
+.logo-dot { width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 12px var(--accent); animation:pulse 2s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.topbar-right { display:flex; align-items:center; gap:16px; }
+.env-badge { font-family:var(--mono); font-size:10px; letter-spacing:1px; padding:3px 10px; border-radius:20px; background:rgba(0,212,255,.08); color:var(--accent); border:1px solid rgba(0,212,255,.2); }
+.avatar { width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,#1a4a6b,#0099cc); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; color:var(--accent); border:1px solid rgba(0,212,255,.3); }
+.app { position:relative; z-index:1; max-width:960px; margin:0 auto; padding:32px 24px 80px; }
 
-.topbar-right { display: flex; align-items: center; gap: 16px; }
-.env-badge {
-  font-family: var(--mono); font-size: 10px; letter-spacing: 1px;
-  padding: 3px 10px; border-radius: 20px;
-  background: rgba(0,212,255,.08); color: var(--accent);
-  border: 1px solid rgba(0,212,255,.2);
-}
-.avatar {
-  width: 30px; height: 30px; border-radius: 50%;
-  background: linear-gradient(135deg, #1a4a6b, #0099cc);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 600; color: var(--accent);
-  border: 1px solid rgba(0,212,255,.3);
-}
+/* STEPPER */
+.stepper { display:flex; align-items:center; gap:0; margin-bottom:36px; background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:4px; overflow:hidden; }
+.step-item { flex:1; display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:7px; cursor:default; transition:background .2s; position:relative; }
+.step-item.active { background:rgba(0,212,255,.08); }
+.step-item.done { background:rgba(0,229,160,.05); }
+.step-num { width:24px; height:24px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:11px; font-weight:600; background:var(--bg3); border:1px solid var(--border2); color:var(--text2); transition:all .25s; }
+.step-item.active .step-num { background:var(--accent); border-color:var(--accent); color:var(--bg); box-shadow:0 0 16px rgba(0,212,255,.4); }
+.step-item.done .step-num { background:var(--green); border-color:var(--green); color:var(--bg); }
+.step-label { font-size:12px; color:var(--text2); font-weight:500; }
+.step-item.active .step-label { color:var(--text1); }
+.step-item.done .step-label { color:var(--green); }
+.step-sep { width:1px; height:28px; background:var(--border); flex-shrink:0; }
 
-/* ── LAYOUT ───────────────────────────────────────────────────────────────── */
-.app { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 32px 24px 80px; }
-
-/* ── STEPPER ──────────────────────────────────────────────────────────────── */
-.stepper {
-  display: flex; align-items: center;
-  gap: 0; margin-bottom: 36px;
-  background: var(--bg2); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 4px; overflow: hidden;
-}
-.step-item {
-  flex: 1; display: flex; align-items: center; gap: 10px;
-  padding: 10px 14px; border-radius: 7px;
-  cursor: default; transition: background .2s;
-  position: relative;
-}
-.step-item.active { background: rgba(0,212,255,.08); }
-.step-item.done { background: rgba(0,229,160,.05); }
-
-.step-num {
-  width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--mono); font-size: 11px; font-weight: 600;
-  background: var(--bg3); border: 1px solid var(--border2);
-  color: var(--text2); transition: all .25s;
-}
-.step-item.active .step-num {
-  background: var(--accent); border-color: var(--accent);
-  color: var(--bg); box-shadow: 0 0 16px rgba(0,212,255,.4);
-}
-.step-item.done .step-num {
-  background: var(--green); border-color: var(--green); color: var(--bg);
-}
-.step-label { font-size: 12px; color: var(--text2); font-weight: 500; }
-.step-item.active .step-label { color: var(--text1); }
-.step-item.done  .step-label { color: var(--green); }
-.step-sep { width: 1px; height: 28px; background: var(--border); flex-shrink: 0; }
-
-/* ── CARD ─────────────────────────────────────────────────────────────────── */
-.card {
-  background: var(--bg2); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 24px 28px; margin-bottom: 16px;
-  animation: fadeUp .3s ease;
-}
+/* CARD */
+.card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px 28px; margin-bottom:16px; animation:fadeUp .3s ease; }
 @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+.card-head { margin-bottom:20px; }
+.card-title { font-size:13px; font-weight:600; color:var(--text1); display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+.card-title svg { color:var(--accent); }
+.card-sub { font-size:12px; color:var(--text2); }
 
-.card-head { margin-bottom: 20px; }
-.card-title {
-  font-size: 13px; font-weight: 600; color: var(--text1);
-  display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
-}
-.card-title svg { color: var(--accent); }
-.card-sub { font-size: 12px; color: var(--text2); }
-
-/* ── TAG ──────────────────────────────────────────────────────────────────── */
-.tag {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-family: var(--mono); font-size: 10px; font-weight: 500;
-  padding: 2px 8px; border-radius: 20px; letter-spacing: .3px;
-}
-.tag-cyan   { background:rgba(0,212,255,.1); color:var(--accent);  border:1px solid rgba(0,212,255,.2); }
-.tag-green  { background:rgba(0,229,160,.1); color:var(--green);   border:1px solid rgba(0,229,160,.2); }
+/* TAG */
+.tag { display:inline-flex; align-items:center; gap:4px; font-family:var(--mono); font-size:10px; font-weight:500; padding:2px 8px; border-radius:20px; letter-spacing:.3px; }
+.tag-cyan   { background:rgba(0,212,255,.1);  color:var(--accent); border:1px solid rgba(0,212,255,.2); }
+.tag-green  { background:rgba(0,229,160,.1);  color:var(--green);  border:1px solid rgba(0,229,160,.2); }
 .tag-amber  { background:rgba(255,181,71,.1); color:var(--amber);  border:1px solid rgba(255,181,71,.2); }
-.tag-red    { background:rgba(255,92,92,.1); color:var(--red);     border:1px solid rgba(255,92,92,.2); }
-.tag-purple { background:rgba(167,139,250,.1); color:var(--purple);border:1px solid rgba(167,139,250,.2); }
+.tag-red    { background:rgba(255,92,92,.1);  color:var(--red);    border:1px solid rgba(255,92,92,.2); }
+.tag-purple { background:rgba(167,139,250,.1);color:var(--purple); border:1px solid rgba(167,139,250,.2); }
 
-/* ── FORM ─────────────────────────────────────────────────────────────────── */
-.field { margin-bottom: 18px; }
-.field label {
-  display: block; font-size: 11px; font-weight: 500;
-  color: var(--text2); margin-bottom: 6px; letter-spacing: .5px; text-transform: uppercase;
-}
-.field input, .field textarea, .field select {
-  width: 100%; padding: 10px 12px;
-  background: var(--bg3); border: 1px solid var(--border2);
-  border-radius: var(--radius); color: var(--text1);
-  font-family: var(--sans); font-size: 13px;
-  transition: border-color .2s, box-shadow .2s;
-  outline: none;
-}
-.field input:focus, .field textarea:focus, .field select:focus {
-  border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,212,255,.1);
-}
-.field textarea { resize: vertical; min-height: 80px; }
-.field select option { background: var(--bg3); }
-.field-row { display: flex; gap: 16px; }
-.field-row .field { flex: 1; }
+/* FORM */
+.field { margin-bottom:18px; }
+.field label { display:block; font-size:11px; font-weight:500; color:var(--text2); margin-bottom:6px; letter-spacing:.5px; text-transform:uppercase; }
+.field input,.field textarea,.field select { width:100%; padding:10px 12px; background:var(--bg3); border:1px solid var(--border2); border-radius:var(--radius); color:var(--text1); font-family:var(--sans); font-size:13px; transition:border-color .2s,box-shadow .2s; outline:none; }
+.field input:focus,.field textarea:focus,.field select:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(0,212,255,.1); }
+.field textarea { resize:vertical; min-height:80px; }
+.field select option { background:var(--bg3); }
+.field-row { display:flex; gap:16px; }
+.field-row .field { flex:1; }
+.s3-path { display:flex; align-items:center; gap:8px; padding:10px 14px; background:rgba(0,212,255,.04); border:1px solid rgba(0,212,255,.15); border-radius:var(--radius); font-family:var(--mono); font-size:11px; color:var(--text2); margin-top:8px; }
+.s3-path code { color:var(--accent); }
 
-/* S3 PATH */
-.s3-path {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 14px; background: rgba(0,212,255,.04);
-  border: 1px solid rgba(0,212,255,.15); border-radius: var(--radius);
-  font-family: var(--mono); font-size: 11px; color: var(--text2);
-  margin-top: 8px;
-}
-.s3-path code { color: var(--accent); }
+/* UPLOAD */
+.upload-zone { border:1.5px dashed rgba(255,255,255,.12); border-radius:var(--radius-lg); padding:32px 20px; text-align:center; cursor:pointer; transition:all .2s; background:var(--bg3); position:relative; }
+.upload-zone:hover { border-color:var(--accent); background:rgba(0,212,255,.03); }
+.upload-zone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+.upload-icon { width:40px; height:40px; margin:0 auto 12px; background:rgba(0,212,255,.08); border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--accent); }
+.upload-zone p { font-size:13px; color:var(--text2); margin-bottom:4px; }
+.upload-zone span { font-family:var(--mono); font-size:10px; color:var(--text3); }
+.file-item { display:flex; align-items:center; gap:10px; padding:10px 14px; margin-top:8px; background:rgba(0,229,160,.04); border:1px solid rgba(0,229,160,.15); border-radius:var(--radius); }
+.file-item svg { color:var(--green); flex-shrink:0; }
+.file-item span { font-size:12px; color:var(--text1); flex:1; font-family:var(--mono); }
+.file-status { font-size:10px; color:var(--green); font-weight:600; letter-spacing:.5px; }
 
-/* ── UPLOAD ZONE ──────────────────────────────────────────────────────────── */
-.upload-zone {
-  border: 1.5px dashed rgba(255,255,255,.12);
-  border-radius: var(--radius-lg); padding: 32px 20px;
-  text-align: center; cursor: pointer; transition: all .2s;
-  background: var(--bg3);
-}
-.upload-zone:hover {
-  border-color: var(--accent); background: rgba(0,212,255,.03);
-}
-.upload-icon {
-  width: 40px; height: 40px; margin: 0 auto 12px;
-  background: rgba(0,212,255,.08); border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  color: var(--accent);
-}
-.upload-zone p { font-size: 13px; color: var(--text2); margin-bottom: 4px; }
-.upload-zone span { font-family: var(--mono); font-size: 10px; color: var(--text3); }
+/* IO TABLE */
+.io-wrap { overflow-x:auto; border-radius:var(--radius); border:1px solid var(--border); }
+.io-table { width:100%; border-collapse:collapse; font-size:12px; }
+.io-table thead th { background:var(--bg3); padding:10px 14px; text-align:left; font-family:var(--mono); font-size:10px; font-weight:600; color:var(--text3); letter-spacing:1px; text-transform:uppercase; border-bottom:1px solid var(--border); }
+.io-table tbody td { padding:10px 14px; border-bottom:1px solid var(--border); color:var(--text1); vertical-align:middle; }
+.io-table tbody tr:last-child td { border-bottom:none; }
+.io-table tbody tr:hover { background:rgba(255,255,255,.02); }
+.sig-name { font-family:var(--mono); font-size:12px; font-weight:500; color:var(--accent); }
+.val-dim { font-family:var(--mono); font-size:11px; color:var(--text2); }
+.add-btn { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text2); padding:10px 14px; border:1px dashed var(--border2); border-top:none; background:var(--bg3); cursor:pointer; width:100%; border-radius:0 0 var(--radius) var(--radius); transition:color .2s; }
+.add-btn:hover { color:var(--accent); border-color:rgba(0,212,255,.3); }
 
-.file-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 14px; margin-top: 8px;
-  background: rgba(0,229,160,.04); border: 1px solid rgba(0,229,160,.15);
-  border-radius: var(--radius);
-}
-.file-item svg { color: var(--green); flex-shrink: 0; }
-.file-item span { font-size: 12px; color: var(--text1); flex: 1; font-family: var(--mono); }
-.file-status { font-size: 10px; color: var(--green); font-weight: 600; letter-spacing: .5px; }
-
-/* ── IO TABLE ─────────────────────────────────────────────────────────────── */
-.io-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
-.io-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.io-table thead th {
-  background: var(--bg3); padding: 10px 14px; text-align: left;
-  font-family: var(--mono); font-size: 10px; font-weight: 600;
-  color: var(--text3); letter-spacing: 1px; text-transform: uppercase;
-  border-bottom: 1px solid var(--border);
-}
-.io-table tbody td {
-  padding: 10px 14px; border-bottom: 1px solid var(--border);
-  color: var(--text1); vertical-align: middle;
-}
-.io-table tbody tr:last-child td { border-bottom: none; }
-.io-table tbody tr:hover { background: rgba(255,255,255,.02); }
-.sig-name { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--accent); }
-.val-dim { font-family: var(--mono); font-size: 11px; color: var(--text2); }
-
-.add-btn {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 12px; color: var(--text2); padding: 10px 14px;
-  border: 1px dashed var(--border2); border-top: none;
-  background: var(--bg3); cursor: pointer; width: 100%;
-  border-radius: 0 0 var(--radius) var(--radius); transition: color .2s;
-}
-.add-btn:hover { color: var(--accent); border-color: rgba(0,212,255,.3); }
-
-/* ── WIRING ───────────────────────────────────────────────────────────────── */
-.wiring { display: flex; flex-direction: column; gap: 2px; }
-.wire-row {
-  display: flex; align-items: center; gap: 0;
-  padding: 8px 0; border-bottom: 1px solid var(--border);
-}
-.wire-row:last-child { border-bottom: none; }
-.swc-box {
-  padding: 5px 12px; border-radius: var(--radius);
-  font-family: var(--mono); font-size: 11px; font-weight: 500;
-  white-space: nowrap;
-}
+/* WIRING */
+.wiring { display:flex; flex-direction:column; gap:2px; }
+.wire-row { display:flex; align-items:center; gap:0; padding:8px 0; border-bottom:1px solid var(--border); }
+.wire-row:last-child { border-bottom:none; }
+.swc-box { padding:5px 12px; border-radius:var(--radius); font-family:var(--mono); font-size:11px; font-weight:500; white-space:nowrap; }
 .swc-in  { background:rgba(0,212,255,.08); border:1px solid rgba(0,212,255,.25); color:var(--accent); }
 .swc-out { background:rgba(255,181,71,.08); border:1px solid rgba(255,181,71,.25); color:var(--amber); }
 .swc-mid { background:var(--bg3); border:1px solid var(--border2); color:var(--text1); }
 .wire-line { flex:1; position:relative; height:1px; background:var(--border2); margin:0 8px; }
-.wire-line::after {
-  content:''; position:absolute; right:-1px; top:-4px;
-  border:4px solid transparent; border-left:6px solid var(--border2);
-}
+.wire-line::after { content:''; position:absolute; right:-1px; top:-4px; border:4px solid transparent; border-left:6px solid var(--border2); }
 .wire-sig { font-family:var(--mono); font-size:10px; color:var(--text3); white-space:nowrap; }
 
-/* ── COMPONENT GRID ───────────────────────────────────────────────────────── */
-.comp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.comp-card {
-  background: var(--bg3); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 16px;
-  cursor: pointer; transition: all .2s; position: relative;
-}
-.comp-card:hover { border-color: var(--border2); background: var(--bg4); }
-.comp-card.selected {
-  border-color: rgba(0,212,255,.4); background: rgba(0,212,255,.05);
-}
-.comp-icon {
-  width: 32px; height: 32px; border-radius: var(--radius);
-  background: var(--bg4); border: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 10px; font-size: 16px;
-}
-.comp-card.selected .comp-icon { background: rgba(0,212,255,.1); border-color: rgba(0,212,255,.3); }
-.comp-name { font-size: 12px; font-weight: 600; color: var(--text1); margin-bottom: 4px; font-family: var(--mono); }
-.comp-desc { font-size: 11px; color: var(--text2); line-height: 1.5; }
-.comp-check {
-  position: absolute; top: 12px; right: 12px;
-  width: 18px; height: 18px; border-radius: 50%;
-  border: 1px solid var(--border2); background: var(--bg4);
-  display: flex; align-items: center; justify-content: center;
-  transition: all .2s;
-}
-.comp-card.selected .comp-check {
-  background: var(--accent); border-color: var(--accent);
-  box-shadow: 0 0 10px rgba(0,212,255,.4);
-}
+/* COMPONENTS */
+.comp-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.comp-card { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; cursor:pointer; transition:all .2s; position:relative; }
+.comp-card:hover { border-color:var(--border2); background:var(--bg4); }
+.comp-card.selected { border-color:rgba(0,212,255,.4); background:rgba(0,212,255,.05); }
+.comp-icon { width:32px; height:32px; border-radius:var(--radius); background:var(--bg4); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; margin-bottom:10px; font-size:16px; }
+.comp-card.selected .comp-icon { background:rgba(0,212,255,.1); border-color:rgba(0,212,255,.3); }
+.comp-name { font-size:12px; font-weight:600; color:var(--text1); margin-bottom:4px; font-family:var(--mono); }
+.comp-desc { font-size:11px; color:var(--text2); line-height:1.5; }
+.comp-check { position:absolute; top:12px; right:12px; width:18px; height:18px; border-radius:50%; border:1px solid var(--border2); background:var(--bg4); display:flex; align-items:center; justify-content:center; transition:all .2s; }
+.comp-card.selected .comp-check { background:var(--accent); border-color:var(--accent); box-shadow:0 0 10px rgba(0,212,255,.4); }
 
-/* ── TEST STRATEGY ────────────────────────────────────────────────────────── */
-.strategy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-.strategy-card {
-  background: var(--bg3); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 20px;
-  cursor: pointer; text-align: center; transition: all .2s;
-}
-.strategy-card:hover { border-color: var(--border2); }
-.strategy-card.selected {
-  border-color: rgba(0,212,255,.4); background: rgba(0,212,255,.05);
-}
-.strategy-icon { font-size: 28px; margin-bottom: 12px; display: block; }
-.strategy-title { font-size: 13px; font-weight: 600; color: var(--text1); margin-bottom: 6px; }
-.strategy-desc { font-size: 11px; color: var(--text2); line-height: 1.6; }
-.strategy-formats { font-family: var(--mono); font-size: 10px; margin-top: 10px; color: var(--text3); }
+/* STRATEGY */
+.strategy-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+.strategy-card { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; cursor:pointer; text-align:center; transition:all .2s; }
+.strategy-card:hover { border-color:var(--border2); }
+.strategy-card.selected { border-color:rgba(0,212,255,.4); background:rgba(0,212,255,.05); }
+.strategy-icon { font-size:28px; margin-bottom:12px; display:block; }
+.strategy-title { font-size:13px; font-weight:600; color:var(--text1); margin-bottom:6px; }
+.strategy-desc { font-size:11px; color:var(--text2); line-height:1.6; }
+.strategy-formats { font-family:var(--mono); font-size:10px; margin-top:10px; color:var(--text3); }
+.ai-panel { background:rgba(167,139,250,.04); border:1px solid rgba(167,139,250,.2); border-radius:var(--radius-lg); padding:18px; margin-top:4px; }
+.ai-panel-title { font-size:12px; font-weight:600; color:var(--purple); margin-bottom:14px; display:flex; align-items:center; gap:6px; font-family:var(--mono); }
 
-.ai-panel {
-  background: rgba(167,139,250,.04); border: 1px solid rgba(167,139,250,.2);
-  border-radius: var(--radius-lg); padding: 18px; margin-top: 4px;
-}
-.ai-panel-title {
-  font-size: 12px; font-weight: 600; color: var(--purple);
-  margin-bottom: 14px; display: flex; align-items: center; gap: 6px;
-  font-family: var(--mono);
-}
+/* BUTTONS */
+.btn-row { display:flex; justify-content:flex-end; gap:10px; margin-top:24px; }
+.btn-primary { background:var(--accent); color:var(--bg); border:none; padding:10px 24px; border-radius:var(--radius); font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px; font-family:var(--sans); box-shadow:0 0 20px rgba(0,212,255,.25); transition:all .2s; }
+.btn-primary:hover { background:#00BFEF; box-shadow:0 0 28px rgba(0,212,255,.4); }
+.btn-primary:disabled { opacity:.5; cursor:not-allowed; }
+.btn-secondary { background:transparent; color:var(--text2); border:1px solid var(--border2); padding:10px 20px; border-radius:var(--radius); font-size:13px; cursor:pointer; font-family:var(--sans); transition:all .2s; }
+.btn-secondary:hover { color:var(--text1); border-color:rgba(255,255,255,.25); }
+.btn-launch { background:linear-gradient(135deg,#00D4FF,#00E5A0); color:var(--bg); border:none; padding:12px 28px; border-radius:var(--radius); font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px; font-family:var(--sans); box-shadow:0 0 30px rgba(0,212,255,.3); transition:all .2s; letter-spacing:.3px; }
+.btn-launch:hover { transform:translateY(-1px); box-shadow:0 4px 40px rgba(0,212,255,.4); }
+.btn-launch:disabled { opacity:.5; cursor:not-allowed; transform:none; }
 
-/* ── BUTTONS ──────────────────────────────────────────────────────────────── */
-.btn-row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
-.btn-primary {
-  background: var(--accent); color: var(--bg);
-  border: none; padding: 10px 24px;
-  border-radius: var(--radius); font-size: 13px; font-weight: 600;
-  cursor: pointer; display: flex; align-items: center; gap: 8px;
-  font-family: var(--sans);
-  box-shadow: 0 0 20px rgba(0,212,255,.25);
-  transition: all .2s;
-}
-.btn-primary:hover { background: #00BFEF; box-shadow: 0 0 28px rgba(0,212,255,.4); }
-.btn-secondary {
-  background: transparent; color: var(--text2);
-  border: 1px solid var(--border2); padding: 10px 20px;
-  border-radius: var(--radius); font-size: 13px; cursor: pointer;
-  font-family: var(--sans); transition: all .2s;
-}
-.btn-secondary:hover { color: var(--text1); border-color: rgba(255,255,255,.25); }
-.btn-launch {
-  background: linear-gradient(135deg, #00D4FF, #00E5A0);
-  color: var(--bg); border: none; padding: 12px 28px;
-  border-radius: var(--radius); font-size: 13px; font-weight: 700;
-  cursor: pointer; display: flex; align-items: center; gap: 8px;
-  font-family: var(--sans);
-  box-shadow: 0 0 30px rgba(0,212,255,.3);
-  transition: all .2s; letter-spacing: .3px;
-}
-.btn-launch:hover { transform: translateY(-1px); box-shadow: 0 4px 40px rgba(0,212,255,.4); }
+/* SCREEN */
+.screen { display:none; }
+.screen.active { display:block; }
 
-/* ── SCREEN ───────────────────────────────────────────────────────────────── */
-.screen { display: none; }
-.screen.active { display: block; }
+/* TOAST */
+.toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); opacity:0; z-index:300; padding:12px 22px; border-radius:var(--radius-lg); font-size:13px; font-family:var(--mono); font-weight:500; transition:all .3s; pointer-events:none; white-space:nowrap; }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+.toast.success { background:rgba(0,229,160,.15); border:1px solid rgba(0,229,160,.3); color:var(--green); }
+.toast.error   { background:rgba(255,92,92,.15);  border:1px solid rgba(255,92,92,.3);  color:var(--red); }
+.toast.info    { background:rgba(0,212,255,.12);   border:1px solid rgba(0,212,255,.3);   color:var(--accent); }
 
-/* ── SUCCESS OVERLAY ──────────────────────────────────────────────────────── */
-.success-overlay {
-  display: none; position: fixed; inset: 0; z-index: 200;
-  background: rgba(10,13,18,.95); backdrop-filter: blur(8px);
-  align-items: center; justify-content: center; flex-direction: column;
-  gap: 20px; text-align: center;
-}
-.success-overlay.show { display: flex; }
-.success-ring {
-  width: 80px; height: 80px; border-radius: 50%;
-  border: 2px solid var(--green);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 32px;
-  box-shadow: 0 0 40px rgba(0,229,160,.3);
-  animation: scaleIn .4s ease;
-}
+/* LOADER */
+.loader-overlay { display:none; position:fixed; inset:0; z-index:250; background:rgba(10,13,18,.85); backdrop-filter:blur(6px); align-items:center; justify-content:center; flex-direction:column; gap:16px; }
+.loader-overlay.show { display:flex; }
+.spinner { width:44px; height:44px; border:3px solid var(--border2); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg)} }
+.loader-msg { font-family:var(--mono); font-size:13px; color:var(--text2); }
+
+/* SUCCESS OVERLAY */
+.success-overlay { display:none; position:fixed; inset:0; z-index:200; background:rgba(10,13,18,.95); backdrop-filter:blur(8px); align-items:center; justify-content:center; flex-direction:column; gap:20px; text-align:center; }
+.success-overlay.show { display:flex; }
+.success-ring { width:80px; height:80px; border-radius:50%; border:2px solid var(--green); display:flex; align-items:center; justify-content:center; font-size:32px; box-shadow:0 0 40px rgba(0,229,160,.3); animation:scaleIn .4s ease; }
 @keyframes scaleIn { from{transform:scale(.5);opacity:0} to{transform:scale(1);opacity:1} }
-.success-title { font-size: 22px; font-weight: 600; color: var(--green); }
-.success-sub { font-size: 13px; color: var(--text2); font-family: var(--mono); }
-.success-tags { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.success-title { font-size:22px; font-weight:600; color:var(--green); }
+.success-sub { font-size:13px; color:var(--text2); font-family:var(--mono); }
+.success-tags { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+
+/* PROJECT ID BANNER */
+.proj-banner { display:none; padding:8px 16px; background:rgba(0,229,160,.06); border:1px solid rgba(0,229,160,.2); border-radius:var(--radius); font-family:var(--mono); font-size:11px; color:var(--green); margin-bottom:16px; align-items:center; gap:8px; }
+.proj-banner.show { display:flex; }
 </style>
 </head>
 <body>
@@ -392,41 +192,42 @@ body::before {
     vECU · TESTING PLATFORM
   </div>
   <div class="topbar-right">
-    <span class="env-badge">SIMULATION</span>
+    <span class="env-badge" id="env-badge">SIMULATION</span>
     <span style="font-size:12px;color:var(--text2)">A.Benali</span>
     <div class="avatar">AB</div>
   </div>
 </div>
 
+<!-- LOADER -->
+<div class="loader-overlay" id="loader">
+  <div class="spinner"></div>
+  <div class="loader-msg" id="loader-msg">Chargement...</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
 <!-- ── APP ── -->
 <div class="app">
 
-  <!-- STEPPER -->
-  <div class="stepper">
-    <div class="step-item active" id="nav0">
-      <div class="step-num" id="num0">1</div>
-      <div class="step-label">Créer un projet</div>
-    </div>
-    <div class="step-sep"></div>
-    <div class="step-item" id="nav1">
-      <div class="step-num" id="num1">2</div>
-      <div class="step-label">Upload software</div>
-    </div>
-    <div class="step-sep"></div>
-    <div class="step-item" id="nav2">
-      <div class="step-num" id="num2">3</div>
-      <div class="step-label">Définir I/O</div>
-    </div>
-    <div class="step-sep"></div>
-    <div class="step-item" id="nav3">
-      <div class="step-num" id="num3">4</div>
-      <div class="step-label">Composants &amp; Tests</div>
-    </div>
+  <!-- PROJECT BANNER -->
+  <div class="proj-banner" id="proj-banner">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+    Projet actif : <strong id="banner-id">—</strong>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════════════════
-       SCREEN 1 — Créer projet
-  ════════════════════════════════════════════════════════════════ -->
+  <!-- STEPPER -->
+  <div class="stepper">
+    <div class="step-item active" id="nav0"><div class="step-num" id="num0">1</div><div class="step-label">Créer un projet</div></div>
+    <div class="step-sep"></div>
+    <div class="step-item" id="nav1"><div class="step-num" id="num1">2</div><div class="step-label">Upload software</div></div>
+    <div class="step-sep"></div>
+    <div class="step-item" id="nav2"><div class="step-num" id="num2">3</div><div class="step-label">Définir I/O</div></div>
+    <div class="step-sep"></div>
+    <div class="step-item" id="nav3"><div class="step-num" id="num3">4</div><div class="step-label">Composants &amp; Tests</div></div>
+  </div>
+
+  <!-- ═══ SCREEN 1 — Créer projet ═══ -->
   <div class="screen active" id="sc0">
     <div class="card">
       <div class="card-head">
@@ -436,34 +237,28 @@ body::before {
         </div>
         <div class="card-sub">Renseigne le nom et la description — un dossier sera automatiquement créé dans S3</div>
       </div>
-
       <div class="field">
         <label>Nom du projet *</label>
         <input type="text" id="proj-name" placeholder="ex : LPA_Control_v2" oninput="updatePath()"/>
       </div>
-
       <div class="field">
         <label>Description</label>
         <textarea id="proj-desc" placeholder="Décris l'objectif de ce projet de test — composant testé, version, contexte..."></textarea>
       </div>
-
       <div class="s3-path">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
         Dossier S3 :&nbsp;<code id="s3-preview">s3://vecu-results/projects/…/</code>
       </div>
     </div>
-
     <div class="btn-row">
-      <button class="btn-primary" onclick="go(1)">
+      <button class="btn-primary" id="btn-create" onclick="createProject()">
         Créer le projet
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </button>
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════════════════
-       SCREEN 2 — Upload
-  ════════════════════════════════════════════════════════════════ -->
+  <!-- ═══ SCREEN 2 — Upload ═══ -->
   <div class="screen" id="sc1">
     <div class="card">
       <div class="card-head">
@@ -474,7 +269,8 @@ body::before {
         <div class="card-sub">Dépose le binaire compilé et le fichier de spécifications techniques</div>
       </div>
 
-      <div class="upload-zone" onclick="fakeUpload('bin')">
+      <div class="upload-zone" id="zone-bin">
+        <input type="file" id="input-bin" accept=".elf,.bin,.hex,.a2l" onchange="uploadFile(this,'bin')"/>
         <div class="upload-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
         </div>
@@ -483,7 +279,7 @@ body::before {
       </div>
       <div class="file-item" id="file-bin" style="display:none">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-        <span id="fname-bin">LPA_firmware_v2.4.1.elf</span>
+        <span id="fname-bin">—</span>
         <span class="file-status">✓ UPLOADÉ</span>
       </div>
 
@@ -492,21 +288,17 @@ body::before {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
           Spécifications / Requirements
         </div>
-        <div class="upload-zone" onclick="fakeUpload('spec')">
+        <div class="upload-zone" id="zone-spec">
+          <input type="file" id="input-spec" accept=".pdf,.docx,.arxml,.xlsx" onchange="uploadFile(this,'spec')"/>
           <div class="upload-icon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
           </div>
           <p>Fichier de spécifications</p>
           <span>.pdf &nbsp;·&nbsp; .docx &nbsp;·&nbsp; .arxml &nbsp;·&nbsp; .xlsx</span>
         </div>
-        <div class="file-item" id="file-spec1" style="display:none">
+        <div class="file-item" id="file-spec" style="display:none">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-          <span>LPA_SRS_v2.4.pdf</span>
-          <span class="file-status">✓ UPLOADÉ</span>
-        </div>
-        <div class="file-item" id="file-spec2" style="display:none">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-          <span>LPA_signals_matrix.arxml</span>
+          <span id="fname-spec">—</span>
           <span class="file-status">✓ UPLOADÉ</span>
         </div>
       </div>
@@ -516,7 +308,6 @@ body::before {
         Stocké dans :&nbsp;<code id="s3-upload">s3://vecu-results/projects/…/software/</code>
       </div>
     </div>
-
     <div class="btn-row">
       <button class="btn-secondary" onclick="go(0)">Retour</button>
       <button class="btn-primary" onclick="go(2)">
@@ -526,9 +317,7 @@ body::before {
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════════════════
-       SCREEN 3 — I/O
-  ════════════════════════════════════════════════════════════════ -->
+  <!-- ═══ SCREEN 3 — I/O ═══ -->
   <div class="screen" id="sc2">
     <div class="card">
       <div class="card-head">
@@ -538,74 +327,20 @@ body::before {
         </div>
         <div class="card-sub">Signaux extraits automatiquement depuis l'ARXML uploadé — modifie ou ajoute selon ton besoin</div>
       </div>
-
       <div class="io-wrap">
         <table class="io-table">
-          <thead>
-            <tr>
-              <th>Signal</th><th>Direction</th><th>Type</th>
-              <th>Min</th><th>Max</th><th>Unité</th><th>Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><span class="sig-name">lpa_active</span></td>
-              <td><span class="tag tag-cyan">INPUT</span></td>
-              <td><span class="tag tag-purple">boolean</span></td>
-              <td class="val-dim">—</td><td class="val-dim">—</td><td class="val-dim">—</td>
-              <td style="color:var(--text2);font-size:12px">Activation LPA</td>
-            </tr>
-            <tr>
-              <td><span class="sig-name">vehicle_speed</span></td>
-              <td><span class="tag tag-cyan">INPUT</span></td>
-              <td><span class="tag tag-green">float32</span></td>
-              <td class="val-dim">0</td><td class="val-dim">250</td><td class="val-dim">km/h</td>
-              <td style="color:var(--text2);font-size:12px">Vitesse véhicule</td>
-            </tr>
-            <tr>
-              <td><span class="sig-name">lateral_offset</span></td>
-              <td><span class="tag tag-cyan">INPUT</span></td>
-              <td><span class="tag tag-green">float32</span></td>
-              <td class="val-dim">-3.5</td><td class="val-dim">3.5</td><td class="val-dim">m</td>
-              <td style="color:var(--text2);font-size:12px">Déport latéral</td>
-            </tr>
-            <tr>
-              <td><span class="sig-name">lane_curvature</span></td>
-              <td><span class="tag tag-cyan">INPUT</span></td>
-              <td><span class="tag tag-green">float32</span></td>
-              <td class="val-dim">-0.1</td><td class="val-dim">0.1</td><td class="val-dim">1/m</td>
-              <td style="color:var(--text2);font-size:12px">Courbure voie</td>
-            </tr>
-            <tr>
-              <td><span class="sig-name">steering_torque</span></td>
-              <td><span class="tag tag-amber">OUTPUT</span></td>
-              <td><span class="tag tag-green">float32</span></td>
-              <td class="val-dim">-10</td><td class="val-dim">10</td><td class="val-dim">Nm</td>
-              <td style="color:var(--text2);font-size:12px">Couple volant</td>
-            </tr>
-            <tr>
-              <td><span class="sig-name">lpa_status</span></td>
-              <td><span class="tag tag-amber">OUTPUT</span></td>
-              <td><span class="tag tag-amber">uint8</span></td>
-              <td class="val-dim">0</td><td class="val-dim">3</td><td class="val-dim">—</td>
-              <td style="color:var(--text2);font-size:12px">État système</td>
-            </tr>
-            <tr>
-              <td><span class="sig-name">warning_flag</span></td>
-              <td><span class="tag tag-amber">OUTPUT</span></td>
-              <td><span class="tag tag-purple">boolean</span></td>
-              <td class="val-dim">—</td><td class="val-dim">—</td><td class="val-dim">—</td>
-              <td style="color:var(--text2);font-size:12px">Alarme conducteur</td>
-            </tr>
+          <thead><tr><th>Signal</th><th>Direction</th><th>Type</th><th>Min</th><th>Max</th><th>Unité</th><th>Description</th></tr></thead>
+          <tbody id="signals-tbody">
+            <tr><td><span class="sig-name">lpa_active</span></td><td><span class="tag tag-cyan">INPUT</span></td><td><span class="tag tag-purple">boolean</span></td><td class="val-dim">—</td><td class="val-dim">—</td><td class="val-dim">—</td><td style="color:var(--text2);font-size:12px">Activation LPA</td></tr>
+            <tr><td><span class="sig-name">vehicle_speed</span></td><td><span class="tag tag-cyan">INPUT</span></td><td><span class="tag tag-green">float32</span></td><td class="val-dim">0</td><td class="val-dim">250</td><td class="val-dim">km/h</td><td style="color:var(--text2);font-size:12px">Vitesse véhicule</td></tr>
+            <tr><td><span class="sig-name">lateral_offset</span></td><td><span class="tag tag-cyan">INPUT</span></td><td><span class="tag tag-green">float32</span></td><td class="val-dim">-3.5</td><td class="val-dim">3.5</td><td class="val-dim">m</td><td style="color:var(--text2);font-size:12px">Déport latéral</td></tr>
+            <tr><td><span class="sig-name">steering_torque</span></td><td><span class="tag tag-amber">OUTPUT</span></td><td><span class="tag tag-green">float32</span></td><td class="val-dim">-10</td><td class="val-dim">10</td><td class="val-dim">Nm</td><td style="color:var(--text2);font-size:12px">Couple volant</td></tr>
+            <tr><td><span class="sig-name">warning_flag</span></td><td><span class="tag tag-amber">OUTPUT</span></td><td><span class="tag tag-purple">boolean</span></td><td class="val-dim">—</td><td class="val-dim">—</td><td class="val-dim">—</td><td style="color:var(--text2);font-size:12px">Alarme conducteur</td></tr>
           </tbody>
         </table>
-        <button class="add-btn">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Ajouter un signal manuellement
-        </button>
+        <button class="add-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Ajouter un signal manuellement</button>
       </div>
     </div>
-
     <div class="card">
       <div class="card-head">
         <div class="card-title">
@@ -615,37 +350,12 @@ body::before {
         <div class="card-sub">Connexions I/O détectées automatiquement entre les composants logiciels</div>
       </div>
       <div class="wiring">
-        <div class="wire-row">
-          <span class="swc-box swc-in">CameraInputSWC</span>
-          <div class="wire-line"></div>
-          <span class="wire-sig">&nbsp;lateral_offset&nbsp;</span>
-          <div class="wire-line"></div>
-          <span class="swc-box swc-mid">LPA_ControlSWC</span>
-        </div>
-        <div class="wire-row">
-          <span class="swc-box swc-in">VehicleSpeedSWC</span>
-          <div class="wire-line"></div>
-          <span class="wire-sig">&nbsp;vehicle_speed&nbsp;</span>
-          <div class="wire-line"></div>
-          <span class="swc-box swc-mid">LPA_ControlSWC</span>
-        </div>
-        <div class="wire-row">
-          <span class="swc-box swc-mid">LPA_ControlSWC</span>
-          <div class="wire-line"></div>
-          <span class="wire-sig">&nbsp;steering_torque&nbsp;</span>
-          <div class="wire-line"></div>
-          <span class="swc-box swc-out">SteeringActuatorSWC</span>
-        </div>
-        <div class="wire-row">
-          <span class="swc-box swc-mid">LPA_ControlSWC</span>
-          <div class="wire-line"></div>
-          <span class="wire-sig">&nbsp;warning_flag&nbsp;</span>
-          <div class="wire-line"></div>
-          <span class="swc-box swc-out">DriverWarningModule</span>
-        </div>
+        <div class="wire-row"><span class="swc-box swc-in">CameraInputSWC</span><div class="wire-line"></div><span class="wire-sig">&nbsp;lateral_offset&nbsp;</span><div class="wire-line"></div><span class="swc-box swc-mid">LPA_ControlSWC</span></div>
+        <div class="wire-row"><span class="swc-box swc-in">VehicleSpeedSWC</span><div class="wire-line"></div><span class="wire-sig">&nbsp;vehicle_speed&nbsp;</span><div class="wire-line"></div><span class="swc-box swc-mid">LPA_ControlSWC</span></div>
+        <div class="wire-row"><span class="swc-box swc-mid">LPA_ControlSWC</span><div class="wire-line"></div><span class="wire-sig">&nbsp;steering_torque&nbsp;</span><div class="wire-line"></div><span class="swc-box swc-out">SteeringActuatorSWC</span></div>
+        <div class="wire-row"><span class="swc-box swc-mid">LPA_ControlSWC</span><div class="wire-line"></div><span class="wire-sig">&nbsp;warning_flag&nbsp;</span><div class="wire-line"></div><span class="swc-box swc-out">DriverWarningModule</span></div>
       </div>
     </div>
-
     <div class="btn-row">
       <button class="btn-secondary" onclick="go(1)">Retour</button>
       <button class="btn-primary" onclick="go(3)">
@@ -655,9 +365,7 @@ body::before {
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════════════════
-       SCREEN 4 — Composants & Tests
-  ════════════════════════════════════════════════════════════════ -->
+  <!-- ═══ SCREEN 4 — Composants & Tests ═══ -->
   <div class="screen" id="sc3">
     <div class="card">
       <div class="card-head">
@@ -668,34 +376,10 @@ body::before {
         <div class="card-sub">Choisis les SWC à inclure dans la session de test</div>
       </div>
       <div class="comp-grid">
-        <div class="comp-card selected" onclick="toggleComp(this)">
-          <div class="comp-check">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-          </div>
-          <div class="comp-icon">🎯</div>
-          <div class="comp-name">LPA_ControlSWC</div>
-          <div class="comp-desc">Contrôleur principal assistance voie — calcul couple volant et état système</div>
-        </div>
-        <div class="comp-card selected" onclick="toggleComp(this)">
-          <div class="comp-check">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-          </div>
-          <div class="comp-icon">📷</div>
-          <div class="comp-name">CameraInputSWC</div>
-          <div class="comp-desc">Acquisition signaux caméra — détection marquage et courbure voie</div>
-        </div>
-        <div class="comp-card" onclick="toggleComp(this)">
-          <div class="comp-check"></div>
-          <div class="comp-icon">🚗</div>
-          <div class="comp-name">VehicleSpeedSWC</div>
-          <div class="comp-desc">Acquisition vitesse via CAN bus — signaux capteurs de roue</div>
-        </div>
-        <div class="comp-card" onclick="toggleComp(this)">
-          <div class="comp-check"></div>
-          <div class="comp-icon">🔍</div>
-          <div class="comp-name">DiagnosticSWC</div>
-          <div class="comp-desc">Supervision DTC et rapports UDS — modules Dem / Dcm AUTOSAR</div>
-        </div>
+        <div class="comp-card selected" onclick="toggleComp(this)"><div class="comp-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><div class="comp-icon">🎯</div><div class="comp-name">LPA_ControlSWC</div><div class="comp-desc">Contrôleur principal assistance voie — calcul couple volant et état système</div></div>
+        <div class="comp-card selected" onclick="toggleComp(this)"><div class="comp-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><div class="comp-icon">📷</div><div class="comp-name">CameraInputSWC</div><div class="comp-desc">Acquisition signaux caméra — détection marquage et courbure voie</div></div>
+        <div class="comp-card" onclick="toggleComp(this)"><div class="comp-check"></div><div class="comp-icon">🚗</div><div class="comp-name">VehicleSpeedSWC</div><div class="comp-desc">Acquisition vitesse via CAN bus — signaux capteurs de roue</div></div>
+        <div class="comp-card" onclick="toggleComp(this)"><div class="comp-check"></div><div class="comp-icon">🔍</div><div class="comp-name">DiagnosticSWC</div><div class="comp-desc">Supervision DTC et rapports UDS — modules Dem / Dcm AUTOSAR</div></div>
       </div>
     </div>
 
@@ -707,22 +391,10 @@ body::before {
         </div>
         <div class="card-sub">Comment veux-tu générer les vecteurs de test ?</div>
       </div>
-
       <div class="strategy-grid">
-        <div class="strategy-card" id="str0" onclick="selectStrategy(0)">
-          <span class="strategy-icon">📂</span>
-          <div class="strategy-title">Mes propres tests</div>
-          <div class="strategy-desc">Upload un fichier avec tes vecteurs de test prédéfinis — contrôle total sur les cas</div>
-          <div class="strategy-formats">.csv · .xlsx · .py · .mat</div>
-        </div>
-        <div class="strategy-card selected" id="str1" onclick="selectStrategy(1)">
-          <span class="strategy-icon">🤖</span>
-          <div class="strategy-title">Génération par IA</div>
-          <div class="strategy-desc">Notre modèle analyse ton software et génère automatiquement des tests depuis les specs</div>
-          <div class="strategy-formats" style="color:var(--accent)">LLM + analyse ARXML</div>
-        </div>
+        <div class="strategy-card" id="str0" onclick="selectStrategy(0)"><span class="strategy-icon">📂</span><div class="strategy-title">Mes propres tests</div><div class="strategy-desc">Upload un fichier avec tes vecteurs de test prédéfinis — contrôle total sur les cas</div><div class="strategy-formats">.csv · .xlsx · .py · .mat</div></div>
+        <div class="strategy-card selected" id="str1" onclick="selectStrategy(1)"><span class="strategy-icon">🤖</span><div class="strategy-title">Génération par IA</div><div class="strategy-desc">Notre modèle analyse ton software et génère automatiquement des tests depuis les specs</div><div class="strategy-formats" style="color:var(--accent)">LLM + analyse ARXML</div></div>
       </div>
-
       <div class="ai-panel" id="ai-panel">
         <div class="ai-panel-title">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
@@ -731,38 +403,21 @@ body::before {
         <div class="field-row">
           <div class="field" style="margin-bottom:12px">
             <label>Couverture cible</label>
-            <select>
-              <option>MC/DC — Modified Condition/Decision</option>
-              <option>Branch coverage</option>
-              <option>Statement coverage</option>
-            </select>
+            <select id="sel-coverage"><option value="MC/DC">MC/DC — Modified Condition/Decision</option><option value="Branch">Branch coverage</option><option value="Statement">Statement coverage</option></select>
           </div>
           <div class="field" style="margin-bottom:12px">
             <label>Nombre de cas</label>
-            <select>
-              <option>Auto (recommandé)</option>
-              <option>50 cas</option>
-              <option>100 cas</option>
-              <option>200 cas</option>
-            </select>
+            <select id="sel-cases"><option value="0">Auto (recommandé)</option><option value="50">50 cas</option><option value="100">100 cas</option><option value="200">200 cas</option></select>
           </div>
         </div>
         <div class="field-row">
           <div class="field" style="margin-bottom:0">
             <label>Focus</label>
-            <select>
-              <option>Nominal + limites + erreurs</option>
-              <option>Nominal uniquement</option>
-              <option>Cas limites uniquement</option>
-            </select>
+            <select id="sel-focus"><option>Nominal + limites + erreurs</option><option>Nominal uniquement</option><option>Cas limites uniquement</option></select>
           </div>
           <div class="field" style="margin-bottom:0">
             <label>Standard de test</label>
-            <select>
-              <option>ISO 26262 — ASIL B</option>
-              <option>ISO 26262 — ASIL D</option>
-              <option>AUTOSAR Testing</option>
-            </select>
+            <select id="sel-standard"><option value="ISO 26262 ASIL B">ISO 26262 — ASIL B</option><option value="ISO 26262 ASIL D">ISO 26262 — ASIL D</option><option value="AUTOSAR">AUTOSAR Testing</option></select>
           </div>
         </div>
       </div>
@@ -770,34 +425,65 @@ body::before {
 
     <div class="btn-row">
       <button class="btn-secondary" onclick="go(2)">Retour</button>
-      <button class="btn-launch" onclick="launch()">
+      <button class="btn-launch" id="btn-launch" onclick="launch()">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         Lancer la session de test
       </button>
     </div>
   </div>
 
-</div><!-- .app -->
+</div>
 
 <!-- SUCCESS OVERLAY -->
 <div class="success-overlay" id="success">
   <div class="success-ring">🚀</div>
   <div class="success-title">Session lancée avec succès</div>
-  <div class="success-sub" id="success-sub">LPA_Control_v2 · ECS Fargate · IA Generation</div>
-  <div class="success-tags">
-    <span class="tag tag-cyan">ECS RunTask</span>
-    <span class="tag tag-green">S3 Results</span>
-    <span class="tag tag-purple">AI Tests</span>
-    <span class="tag tag-amber">ISO 26262</span>
-  </div>
-  <button class="btn-secondary" style="margin-top:12px" onclick="resetAll()">← Nouveau projet</button>
+  <div class="success-sub" id="success-sub">—</div>
+  <div class="success-tags" id="success-tags"></div>
+  <div style="margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--text3)" id="success-detail"></div>
+  <button class="btn-secondary" style="margin-top:16px" onclick="resetAll()">← Nouveau projet</button>
 </div>
 
 <script>
-/* ── STATE ──────────────────────────────────────────────────────────────── */
-let projName = '';
+// ══════════════════════════════════════════════════════════════
+// ⚙️  CONFIGURATION — mettre à jour après déploiement API Gateway
+// ══════════════════════════════════════════════════════════════
+const API = 'https://ze8agl991f.execute-api.us-east-1.amazonaws.com/prod';
+// ══════════════════════════════════════════════════════════════
 
-/* ── S3 PATH UPDATE ─────────────────────────────────────────────────────── */
+// ── STATE
+let PROJECT_ID  = null;
+let projName    = '';
+let strategy    = 1;    // 0 = manual, 1 = IA
+let binUploaded = false;
+
+// ── DETECT MODE
+const DEMO_MODE = API.includes('XXXXXXXX');
+if (DEMO_MODE) {
+  document.getElementById('env-badge').textContent = 'DEMO';
+  document.getElementById('env-badge').style.background = 'rgba(255,181,71,.08)';
+  document.getElementById('env-badge').style.color = 'var(--amber)';
+  document.getElementById('env-badge').style.borderColor = 'rgba(255,181,71,.2)';
+}
+
+// ── TOAST
+function showToast(msg, type='info', duration=3000){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ── LOADER
+function showLoader(msg='Traitement en cours...'){
+  document.getElementById('loader-msg').textContent = msg;
+  document.getElementById('loader').classList.add('show');
+}
+function hideLoader(){
+  document.getElementById('loader').classList.remove('show');
+}
+
+// ── S3 PATH
 function updatePath(){
   const v = document.getElementById('proj-name').value.trim().replace(/\s+/g,'_');
   projName = v;
@@ -806,7 +492,7 @@ function updatePath(){
   document.getElementById('s3-upload').textContent  = 's3://vecu-results/projects/' + slug + '/software/';
 }
 
-/* ── NAVIGATION ─────────────────────────────────────────────────────────── */
+// ── NAVIGATION
 function go(n){
   document.querySelectorAll('.screen').forEach((s,i) => s.classList.toggle('active', i===n));
   document.querySelectorAll('.step-item').forEach((d,i) => {
@@ -821,17 +507,110 @@ function go(n){
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
-/* ── FAKE UPLOAD ────────────────────────────────────────────────────────── */
-function fakeUpload(type){
-  if(type === 'bin'){
-    document.getElementById('file-bin').style.display = 'flex';
-  } else {
-    document.getElementById('file-spec1').style.display = 'flex';
-    setTimeout(() => document.getElementById('file-spec2').style.display = 'flex', 400);
+// ══════════════════════════════════════════════════════════════
+// ÉTAPE 1 — Créer le projet (POST /projects)
+// ══════════════════════════════════════════════════════════════
+async function createProject(){
+  const name = document.getElementById('proj-name').value.trim();
+  const desc = document.getElementById('proj-desc').value.trim();
+
+  if(!name){ showToast('⚠️ Le nom du projet est requis', 'error'); return; }
+
+  if(DEMO_MODE){
+    // Mode démo — pas d'API réelle
+    PROJECT_ID = 'demo-' + Math.random().toString(36).slice(2,6);
+    projName   = name;
+    showBanner();
+    showToast('✅ Projet créé (mode démo)', 'success');
+    go(1);
+    return;
+  }
+
+  showLoader('Création du projet dans S3 + DynamoDB...');
+  try {
+    const resp = await fetch(`${API}/projects`, {
+      method:  'POST',
+      headers: {'Content-Type':'application/json'},
+      body:    JSON.stringify({ name, description: desc })
+    });
+    if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    PROJECT_ID = data.project_id;
+    projName   = name;
+    showBanner();
+    showToast(`✅ Projet créé — ID: ${PROJECT_ID}`, 'success');
+    updatePath();
+    go(1);
+  } catch(e) {
+    showToast('❌ Erreur création projet : ' + e.message, 'error', 5000);
+  } finally {
+    hideLoader();
   }
 }
 
-/* ── COMPONENT TOGGLE ───────────────────────────────────────────────────── */
+function showBanner(){
+  document.getElementById('banner-id').textContent = PROJECT_ID;
+  document.getElementById('proj-banner').classList.add('show');
+}
+
+// ══════════════════════════════════════════════════════════════
+// ÉTAPE 2 — Upload fichier (GET /projects/{id}/upload-url)
+// ══════════════════════════════════════════════════════════════
+async function uploadFile(input, type){
+  const file = input.files[0];
+  if(!file) return;
+
+  if(DEMO_MODE){
+    if(type === 'bin'){
+      document.getElementById('fname-bin').textContent = file.name;
+      document.getElementById('file-bin').style.display = 'flex';
+      binUploaded = true;
+    } else {
+      document.getElementById('fname-spec').textContent = file.name;
+      document.getElementById('file-spec').style.display = 'flex';
+    }
+    showToast(`✅ ${file.name} uploadé (mode démo)`, 'success');
+    return;
+  }
+
+  if(!PROJECT_ID){ showToast('⚠️ Crée d\'abord un projet', 'error'); return; }
+
+  showLoader(`Upload de ${file.name}...`);
+  try {
+    // 1. Obtenir la presigned URL
+    const urlResp = await fetch(
+      `${API}/projects/${PROJECT_ID}/upload-url?filename=${encodeURIComponent(file.name)}`
+    );
+    if(!urlResp.ok) throw new Error(`HTTP ${urlResp.status}`);
+    const { upload_url } = await urlResp.json();
+
+    // 2. Uploader directement dans S3
+    const putResp = await fetch(upload_url, {
+      method: 'PUT',
+      body:   file,
+      headers:{'Content-Type': file.type || 'application/octet-stream'}
+    });
+    if(!putResp.ok) throw new Error(`Upload S3 HTTP ${putResp.status}`);
+
+    if(type === 'bin'){
+      document.getElementById('fname-bin').textContent = file.name;
+      document.getElementById('file-bin').style.display = 'flex';
+      binUploaded = true;
+    } else {
+      document.getElementById('fname-spec').textContent = file.name;
+      document.getElementById('file-spec').style.display = 'flex';
+    }
+    showToast(`✅ ${file.name} uploadé dans S3`, 'success');
+  } catch(e) {
+    showToast('❌ Erreur upload : ' + e.message, 'error', 5000);
+  } finally {
+    hideLoader();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ÉTAPE 3 — Composant toggle
+// ══════════════════════════════════════════════════════════════
 function toggleComp(el){
   el.classList.toggle('selected');
   const chk = el.querySelector('.comp-check');
@@ -840,29 +619,114 @@ function toggleComp(el){
     : '';
 }
 
-/* ── STRATEGY SELECT ────────────────────────────────────────────────────── */
 function selectStrategy(n){
+  strategy = n;
   document.getElementById('str0').classList.toggle('selected', n===0);
   document.getElementById('str1').classList.toggle('selected', n===1);
   document.getElementById('ai-panel').style.display = n===1 ? 'block' : 'none';
 }
 
-/* ── LAUNCH ─────────────────────────────────────────────────────────────── */
-function launch(){
-  const name = projName || 'MonProjet';
+// ══════════════════════════════════════════════════════════════
+// ÉTAPE 4 — Lancer la simulation
+// (POST /projects/{id}/generate-tests + POST /projects/{id}/run)
+// ══════════════════════════════════════════════════════════════
+async function launch(){
+  const btn = document.getElementById('btn-launch');
+  btn.disabled = true;
+
+  if(DEMO_MODE){
+    showLoader('Génération des tests IA (démo)...');
+    await sleep(1500);
+    showLoader('Build image Docker (démo)...');
+    await sleep(1500);
+    showLoader('Lancement ECS Fargate (démo)...');
+    await sleep(1500);
+    hideLoader();
+    showSuccess({
+      project_id: PROJECT_ID || 'demo-xxxx',
+      status:     'SUCCESS',
+      public_ip:  '3.91.xxx.xxx',
+      run_id:     new Date().toISOString().slice(0,19).replace('T','_'),
+      message:    'Mode démo — aucun appel AWS réel'
+    });
+    btn.disabled = false;
+    return;
+  }
+
+  if(!PROJECT_ID){ showToast('⚠️ Crée d\'abord un projet (étape 1)', 'error'); btn.disabled=false; return; }
+
+  try {
+    // ── A. Générer les tests IA si stratégie IA
+    if(strategy === 1){
+      showLoader('Génération des vecteurs de test avec Bedrock (Claude)...');
+      const coverage = document.getElementById('sel-coverage').value;
+      const nbCases  = parseInt(document.getElementById('sel-cases').value) || 50;
+      const standard = document.getElementById('sel-standard').value;
+
+      const genResp = await fetch(`${API}/projects/${PROJECT_ID}/generate-tests`, {
+        method:  'POST',
+        headers: {'Content-Type':'application/json'},
+        body:    JSON.stringify({ coverage, nb_cases: nbCases, standard })
+      });
+      if(!genResp.ok) throw new Error(`Generate tests HTTP ${genResp.status}`);
+      const genData = await genResp.json();
+      showToast(`✅ ${nbCases} vecteurs générés → S3`, 'success');
+    }
+
+    // ── B. Lancer la simulation ECS
+    showLoader('Build image Docker + lancement ECS Fargate...\n(2-3 minutes)');
+    const runResp = await fetch(`${API}/projects/${PROJECT_ID}/run`, {
+      method:  'POST',
+      headers: {'Content-Type':'application/json'},
+      body:    JSON.stringify({ strategy })
+    });
+    if(!runResp.ok) throw new Error(`Run HTTP ${runResp.status}`);
+    const runData = await runResp.json();
+    hideLoader();
+    showSuccess(runData);
+
+  } catch(e){
+    hideLoader();
+    showToast('❌ Erreur lancement : ' + e.message, 'error', 6000);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function showSuccess(data){
+  const name = projName || data.project_id;
+  const standard = document.getElementById('sel-standard')?.value || 'ISO 26262';
+
   document.getElementById('success-sub').textContent =
-    name + ' · ECS Fargate · IA Generation · ISO 26262';
+    `${name} · ${data.status} · run ${data.run_id || '—'}`;
+
+  document.getElementById('success-detail').textContent =
+    data.public_ip ? `IP: ${data.public_ip} · ${data.message || ''}` : (data.message || '');
+
+  document.getElementById('success-tags').innerHTML = `
+    <span class="tag tag-cyan">ECS RunTask</span>
+    <span class="tag tag-green">S3 Results</span>
+    <span class="tag tag-purple">AI Tests</span>
+    <span class="tag tag-amber">${standard}</span>
+    <span class="tag ${data.status==='SUCCESS'?'tag-green':'tag-red'}">${data.status}</span>
+  `;
+
   document.getElementById('success').classList.add('show');
 }
 
-/* ── RESET ──────────────────────────────────────────────────────────────── */
+function sleep(ms){ return new Promise(r => setTimeout(r,ms)); }
+
+// ── RESET
 function resetAll(){
   document.getElementById('success').classList.remove('show');
   document.getElementById('proj-name').value = '';
   document.getElementById('proj-desc').value = '';
-  document.getElementById('file-bin').style.display   = 'none';
-  document.getElementById('file-spec1').style.display = 'none';
-  document.getElementById('file-spec2').style.display = 'none';
+  document.getElementById('file-bin').style.display  = 'none';
+  document.getElementById('file-spec').style.display = 'none';
+  document.getElementById('proj-banner').classList.remove('show');
+  PROJECT_ID  = null;
+  projName    = '';
+  binUploaded = false;
   updatePath();
   go(0);
 }
