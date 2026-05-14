@@ -523,6 +523,57 @@ function updatePath(){
   document.getElementById('s3-preview').textContent = 's3://vecu-results/projects/' + slug + '/';
   document.getElementById('s3-upload').textContent  = 's3://vecu-results/projects/' + slug + '/software/';
 }
+async function loadSignals(){
+  if(!PROJECT_ID || DEMO_MODE) return;
+
+  showLoader('Chargement des signaux...');
+  try {
+    const resp = await fetch(`${API}/projects/${PROJECT_ID}/signals`);
+    const text = await resp.text();
+    let data   = JSON.parse(text);
+    if(data.body && typeof data.body === 'string') data = JSON.parse(data.body);
+
+    const signals = data.signals || [];
+    console.log('[SIGNALS]', signals);
+
+    if(signals.length === 0){
+      showToast('⚠️ Aucun signal trouvé — vérifie ton fichier Excel', 'error');
+      return;
+    }
+
+    // Reconstruire le tableau I/O dynamiquement
+    const tbody = document.querySelector('.io-table tbody');
+    if(!tbody) return;
+
+    tbody.innerHTML = signals.map(sig => `
+      <tr>
+        <td><span class="sig-name">${sig.signal_name}</span></td>
+        <td><span class="tag ${sig.direction === 'INPUT' ? 'tag-cyan' : 'tag-amber'}">${sig.direction}</span></td>
+        <td><span class="tag ${getTypeTag(sig.data_type)}">${sig.data_type}</span></td>
+        <td class="val-dim">${sig.min_value || '—'}</td>
+        <td class="val-dim">${sig.max_value || '—'}</td>
+        <td class="val-dim">${sig.unit || '—'}</td>
+        <td style="color:var(--text2);font-size:12px">${sig.description || '—'}</td>
+      </tr>
+    `).join('');
+
+    showToast(`✅ ${signals.length} signaux chargés depuis DynamoDB`, 'success');
+
+  } catch(e){
+    console.error('[SIGNALS]', e);
+    showToast('❌ Erreur chargement signaux : ' + e.message, 'error');
+  } finally {
+    hideLoader();
+  }
+}
+
+function getTypeTag(type){
+  if(!type) return 'tag-green';
+  const t = type.toLowerCase();
+  if(t.includes('bool'))   return 'tag-purple';
+  if(t.includes('uint') || t.includes('int')) return 'tag-amber';
+  return 'tag-green';
+}
 
 // ── NAVIGATION
 function go(n){
@@ -530,7 +581,8 @@ function go(n){
   document.querySelectorAll('.step-item').forEach((d,i) => {
     d.classList.remove('active','done');
     if(i < n)  d.classList.add('done');
-    if(i === n) d.classList.add('active');
+    //if(i === n) d.classList.add('active');
+    if(n === 2) loadSignals();
     const num = document.getElementById('num'+i);
     num.innerHTML = i < n
       ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>'
