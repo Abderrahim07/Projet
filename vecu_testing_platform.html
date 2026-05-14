@@ -308,6 +308,18 @@ body::before {
         Stocké dans :&nbsp;<code id="s3-upload">s3://vecu-results/projects/…/software/</code>
       </div>
     </div>
+    <!-- S3 Files Status -->
+    <div class="card" style="margin-top:12px">
+      <div class="card-title" style="font-size:12px;margin-bottom:12px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+        </svg>
+        Fichiers dans S3
+      </div>
+      <div id="s3-files-list" style="color:var(--text3);font-size:11px;font-family:var(--mono)">
+        Aucun fichier uploadé
+      </div>
+    </div>
     <div class="btn-row">
       <button class="btn-secondary" onclick="go(0)">Retour</button>
       <button class="btn-primary" onclick="go(2)">
@@ -578,6 +590,13 @@ async function uploadFile(input, type){
   const file = input.files[0];
   if(!file) return;
 
+  // Vérifier que le projet est créé
+  if(!PROJECT_ID){
+    showToast('⚠️ Crée d\'abord un projet (étape 1)', 'error');
+    return;
+  }
+
+  // Mode DEMO
   if(DEMO_MODE){
     if(type === 'bin'){
       document.getElementById('fname-bin').textContent = file.name;
@@ -587,29 +606,46 @@ async function uploadFile(input, type){
       document.getElementById('fname-spec').textContent = file.name;
       document.getElementById('file-spec').style.display = 'flex';
     }
-    showToast(`✅ ${file.name} uploadé (mode démo)`, 'success');
+    showToast(`✅ ${file.name} (mode démo)`, 'success');
     return;
   }
 
-  if(!PROJECT_ID){ showToast('⚠️ Crée d\'abord un projet', 'error'); return; }
-
-  showLoader(`Upload de ${file.name}...`);
+  showLoader(`Upload de ${file.name} vers S3...`);
   try {
-    // 1. Obtenir la presigned URL
+    // ── Étape 1 : obtenir la presigned URL
     const urlResp = await fetch(
-      `${API}/projects/${PROJECT_ID}/upload-url?filename=${encodeURIComponent(file.name)}`
+      `${API}/projects/${PROJECT_ID}/upload-url?filename=${encodeURIComponent(file.name)}`,
+      { method: 'GET', headers: { 'Accept': 'application/json' } }
     );
-    if(!urlResp.ok) throw new Error(`HTTP ${urlResp.status}`);
-    const { upload_url } = await urlResp.json();
 
-    // 2. Uploader directement dans S3
-    const putResp = await fetch(upload_url, {
-      method: 'PUT',
-      body:   file,
-      headers:{'Content-Type': file.type || 'application/octet-stream'}
+    const urlText = await urlResp.text();
+    console.log('[UPLOAD URL] raw:', urlText);
+
+    let urlData;
+    try { urlData = JSON.parse(urlText); }
+    catch(e){ throw new Error('Réponse URL non-JSON : ' + urlText.slice(0,100)); }
+
+    // Gérer body imbriqué API Gateway
+    if(urlData.body && typeof urlData.body === 'string'){
+      urlData = JSON.parse(urlData.body);
+    }
+
+    const presignedUrl = urlData.upload_url;
+    if(!presignedUrl) throw new Error('upload_url manquant dans la réponse');
+
+    console.log('[UPLOAD] presigned URL obtenue pour:', urlData.key);
+
+    // ── Étape 2 : uploader directement dans S3
+    const putResp = await fetch(presignedUrl, {
+      method:  'PUT',
+      body:    file,
+      headers: { 'Content-Type': 'application/octet-stream' }
     });
-    if(!putResp.ok) throw new Error(`Upload S3 HTTP ${putResp.status}`);
 
+    console.log('[UPLOAD] S3 PUT status:', putResp.status);
+    if(!putResp.ok) throw new Error(`S3 upload échoué : HTTP ${putResp.status}`);
+
+    // ── Étape 3 : afficher le fichier uploadé
     if(type === 'bin'){
       document.getElementById('fname-bin').textContent = file.name;
       document.getElementById('file-bin').style.display = 'flex';
@@ -618,9 +654,12 @@ async function uploadFile(input, type){
       document.getElementById('fname-spec').textContent = file.name;
       document.getElementById('file-spec').style.display = 'flex';
     }
-    showToast(`✅ ${file.name} uploadé dans S3`, 'success');
-  } catch(e) {
-    showToast('❌ Erreur upload : ' + e.message, 'error', 5000);
+
+    showToast(`✅ ${file.name} → S3 projects/${PROJECT_ID}/`, 'success');
+
+  } catch(e){
+    console.error('[UPLOAD] error:', e);
+    showToast('❌ Upload échoué : ' + e.message, 'error', 6000);
   } finally {
     hideLoader();
   }
@@ -747,6 +786,36 @@ function resetAll(){
   binUploaded = false;
   updatePath();
   go(0);
+}
+
+async function checkS3Files(){
+  if(!PROJECT_ID || DEMO_MODE) return;
+
+  try {
+    // Appel Lambda qui liste les fichiers du projet
+    const resp = await fetch(`${API}/projects/${PROJECT_ID}/files`);
+    const text = await resp.text();
+    let data   = JSON.parse(text);
+    if(data.body && typeof data.body === 'string') data = JSON.parse(data.body);
+
+    const files = data.files || [];
+    console.log('[S3 FILES]', files);
+
+    // Afficher dans l'interface
+    const container = document.getElementById('s3-files-list');
+    if(container){
+      container.innerHTML = files.length === 0
+        ? '<span style="color:var(--text3);font-size:11px">Aucun fichier uploadé</span>'
+        : files.map(f => `
+            <div class="file-item" style="display:flex">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>${f.name}</span>
+              <span class="file-status">${f.size}</span>
+            </div>`).join('');
+    }
+  } catch(e){
+    console.warn('[CHECK S3]', e.message);
+  }
 }
 </script>
 </body>
