@@ -516,8 +516,8 @@ async function createProject(){
 
   if(!name){ showToast('⚠️ Le nom du projet est requis', 'error'); return; }
 
+  // ── Si API pas encore configurée → mode démo
   if(DEMO_MODE){
-    // Mode démo — pas d'API réelle
     PROJECT_ID = 'demo-' + Math.random().toString(36).slice(2,6);
     projName   = name;
     showBanner();
@@ -526,23 +526,41 @@ async function createProject(){
     return;
   }
 
-  showLoader('Création du projet dans S3 + DynamoDB...');
+  showLoader('Création du projet...');
   try {
     const resp = await fetch(`${API}/projects`, {
       method:  'POST',
-      headers: {'Content-Type':'application/json'},
-      body:    JSON.stringify({ name, description: desc })
+      headers: {
+        'Content-Type':  'application/json',
+        'Accept':        'application/json'
+      },
+      body: JSON.stringify({ name, description: desc })
     });
-    if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const data = await resp.json();
+
+    const text = await resp.text();
+    console.log('[CREATE PROJECT] raw response:', text);
+
+    let data;
+    try { data = JSON.parse(text); }
+    catch(e) { throw new Error('Réponse non-JSON : ' + text.slice(0,100)); }
+
+    // ── Gérer body imbriqué (API Gateway wrapping)
+    if(data.body && typeof data.body === 'string'){
+      data = JSON.parse(data.body);
+    }
+
+    if(!data.project_id) throw new Error('project_id manquant dans la réponse');
+
     PROJECT_ID = data.project_id;
     projName   = name;
     showBanner();
-    showToast(`✅ Projet créé — ID: ${PROJECT_ID}`, 'success');
     updatePath();
+    showToast(`✅ Projet "${name}" créé — ID: ${PROJECT_ID}`, 'success');
     go(1);
+
   } catch(e) {
-    showToast('❌ Erreur création projet : ' + e.message, 'error', 5000);
+    console.error('[CREATE PROJECT] error:', e);
+    showToast('❌ ' + e.message, 'error', 6000);
   } finally {
     hideLoader();
   }
