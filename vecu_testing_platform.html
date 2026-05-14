@@ -269,10 +269,20 @@ body::before {
         <div class="card-sub">Dépose le binaire compilé et le fichier de spécifications techniques</div>
       </div>
 
-      <div class="upload-zone" id="zone-bin">
-        <input type="file" id="input-bin" accept=".elf,.bin,.hex,.a2l" onchange="uploadFile(this,'bin')"/>
+      <!-- Zone binaire -->
+      <div class="upload-zone" id="zone-bin"
+           onclick="document.getElementById('input-bin').click()">
+        <input type="file" id="input-bin"
+               accept=".elf,.bin,.hex,.a2l"
+               style="display:none"
+               onchange="uploadFile(this,'bin')"/>
         <div class="upload-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2">
+            <polyline points="16 16 12 12 8 16"/>
+            <line x1="12" y1="12" x2="12" y2="21"/>
+            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+          </svg>
         </div>
         <p>Binaire ECU compilé</p>
         <span>.elf &nbsp;·&nbsp; .bin &nbsp;·&nbsp; .hex &nbsp;·&nbsp; .a2l</span>
@@ -288,10 +298,20 @@ body::before {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
           Spécifications / Requirements
         </div>
-        <div class="upload-zone" id="zone-spec">
-          <input type="file" id="input-spec" accept=".pdf,.docx,.arxml,.xlsx" onchange="uploadFile(this,'spec')"/>
+        <!-- Zone specs -->
+        <div class="upload-zone" id="zone-spec"
+             onclick="document.getElementById('input-spec').click()">
+          <input type="file" id="input-spec"
+                 accept=".pdf,.docx,.arxml,.xlsx,.csv"
+                 style="display:none"
+                 onchange="uploadFile(this,'spec')"/>
           <div class="upload-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+              <polyline points="16 16 12 12 8 16"/>
+              <line x1="12" y1="12" x2="12" y2="21"/>
+              <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+            </svg>
           </div>
           <p>Fichier de spécifications</p>
           <span>.pdf &nbsp;·&nbsp; .docx &nbsp;·&nbsp; .arxml &nbsp;·&nbsp; .xlsx</span>
@@ -590,75 +610,84 @@ async function uploadFile(input, type){
   const file = input.files[0];
   if(!file) return;
 
-  // Vérifier que le projet est créé
+  // Feedback immédiat — afficher le nom avant même l'upload
+  if(type === 'bin'){
+    document.getElementById('fname-bin').textContent = `⏳ ${file.name}`;
+    document.getElementById('file-bin').style.display = 'flex';
+    document.getElementById('zone-bin').style.borderColor = 'var(--amber)';
+  } else {
+    document.getElementById('fname-spec').textContent = `⏳ ${file.name}`;
+    document.getElementById('file-spec').style.display = 'flex';
+    document.getElementById('zone-spec').style.borderColor = 'var(--amber)';
+  }
+
   if(!PROJECT_ID){
     showToast('⚠️ Crée d\'abord un projet (étape 1)', 'error');
     return;
   }
 
-  // Mode DEMO
   if(DEMO_MODE){
+    await sleep(800);
     if(type === 'bin'){
       document.getElementById('fname-bin').textContent = file.name;
-      document.getElementById('file-bin').style.display = 'flex';
+      document.getElementById('zone-bin').style.borderColor = 'var(--green)';
       binUploaded = true;
     } else {
       document.getElementById('fname-spec').textContent = file.name;
-      document.getElementById('file-spec').style.display = 'flex';
+      document.getElementById('zone-spec').style.borderColor = 'var(--green)';
     }
-    showToast(`✅ ${file.name} (mode démo)`, 'success');
+    showToast(`✅ ${file.name} uploadé (mode démo)`, 'success');
     return;
   }
 
   showLoader(`Upload de ${file.name} vers S3...`);
   try {
-    // ── Étape 1 : obtenir la presigned URL
+    // Obtenir presigned URL
     const urlResp = await fetch(
       `${API}/projects/${PROJECT_ID}/upload-url?filename=${encodeURIComponent(file.name)}`,
-      { method: 'GET', headers: { 'Accept': 'application/json' } }
+      { method: 'GET' }
     );
-
     const urlText = await urlResp.text();
     console.log('[UPLOAD URL] raw:', urlText);
 
-    let urlData;
-    try { urlData = JSON.parse(urlText); }
-    catch(e){ throw new Error('Réponse URL non-JSON : ' + urlText.slice(0,100)); }
-
-    // Gérer body imbriqué API Gateway
+    let urlData = JSON.parse(urlText);
     if(urlData.body && typeof urlData.body === 'string'){
       urlData = JSON.parse(urlData.body);
     }
 
-    const presignedUrl = urlData.upload_url;
-    if(!presignedUrl) throw new Error('upload_url manquant dans la réponse');
+    if(!urlData.upload_url) throw new Error('upload_url manquant');
 
-    console.log('[UPLOAD] presigned URL obtenue pour:', urlData.key);
-
-    // ── Étape 2 : uploader directement dans S3
-    const putResp = await fetch(presignedUrl, {
+    // Upload direct S3
+    const putResp = await fetch(urlData.upload_url, {
       method:  'PUT',
       body:    file,
       headers: { 'Content-Type': 'application/octet-stream' }
     });
+    if(!putResp.ok) throw new Error(`S3 PUT HTTP ${putResp.status}`);
 
-    console.log('[UPLOAD] S3 PUT status:', putResp.status);
-    if(!putResp.ok) throw new Error(`S3 upload échoué : HTTP ${putResp.status}`);
-
-    // ── Étape 3 : afficher le fichier uploadé
+    // Succès visuel
     if(type === 'bin'){
-      document.getElementById('fname-bin').textContent = file.name;
-      document.getElementById('file-bin').style.display = 'flex';
+      document.getElementById('fname-bin').textContent = `✓ ${file.name}`;
+      document.getElementById('zone-bin').style.borderColor = 'var(--green)';
       binUploaded = true;
     } else {
-      document.getElementById('fname-spec').textContent = file.name;
-      document.getElementById('file-spec').style.display = 'flex';
+      document.getElementById('fname-spec').textContent = `✓ ${file.name}`;
+      document.getElementById('zone-spec').style.borderColor = 'var(--green)';
     }
 
-    showToast(`✅ ${file.name} → S3 projects/${PROJECT_ID}/`, 'success');
+    showToast(`✅ ${file.name} → s3://.../projects/${PROJECT_ID}/`, 'success');
+    checkS3Files();
 
   } catch(e){
     console.error('[UPLOAD] error:', e);
+    // Erreur visuelle
+    if(type === 'bin'){
+      document.getElementById('fname-bin').textContent = `❌ ${file.name} — échec`;
+      document.getElementById('zone-bin').style.borderColor = 'var(--red)';
+    } else {
+      document.getElementById('fname-spec').textContent = `❌ ${file.name} — échec`;
+      document.getElementById('zone-spec').style.borderColor = 'var(--red)';
+    }
     showToast('❌ Upload échoué : ' + e.message, 'error', 6000);
   } finally {
     hideLoader();
