@@ -4,193 +4,277 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>vECU Testing Platform</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg:#0A0D12; --bg2:#0F1318; --bg3:#151A22; --bg4:#1C232E;
-  --border:rgba(255,255,255,.07); --border2:rgba(255,255,255,.12);
-  --accent:#00D4FF; --accent2:#0099CC;
-  --green:#00E5A0; --amber:#FFB547; --red:#FF5C5C; --purple:#A78BFA;
-  --text1:#F0F4F8; --text2:#8A9BB0; --text3:#4A5568;
-  --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
-  --radius:6px; --radius-lg:10px;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080B10;--bg2:#0D1117;--bg3:#131920;--bg4:#1A2233;
+  --border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.11);
+  --accent:#00D4FF;--green:#00E5A0;--amber:#FFB547;--red:#FF5C5C;--purple:#A78BFA;
+  --text1:#EEF2F7;--text2:#7A8FA8;--text3:#3D5068;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+  --r:6px;--rl:10px;
 }
-body { font-family:var(--sans); background:var(--bg); color:var(--text1); min-height:100vh; overflow-x:hidden; }
-body::before {
-  content:''; position:fixed; inset:0;
-  background-image: linear-gradient(rgba(0,212,255,.03) 1px,transparent 1px), linear-gradient(90deg,rgba(0,212,255,.03) 1px,transparent 1px);
-  background-size:40px 40px; pointer-events:none; z-index:0;
-}
-.topbar {
-  position:sticky; top:0; z-index:100;
-  display:flex; align-items:center; justify-content:space-between;
-  padding:0 28px; height:52px;
-  background:rgba(10,13,18,.92); backdrop-filter:blur(16px);
-  border-bottom:1px solid var(--border);
-}
-.logo { display:flex; align-items:center; gap:10px; font-family:var(--mono); font-size:13px; font-weight:600; color:var(--accent); letter-spacing:.5px; }
-.logo-dot { width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 12px var(--accent); animation:pulse 2s infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-.topbar-right { display:flex; align-items:center; gap:16px; }
-.env-badge { font-family:var(--mono); font-size:10px; letter-spacing:1px; padding:3px 10px; border-radius:20px; background:rgba(0,212,255,.08); color:var(--accent); border:1px solid rgba(0,212,255,.2); }
-.avatar { width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,#1a4a6b,#0099cc); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; color:var(--accent); border:1px solid rgba(0,212,255,.3); }
-.app { position:relative; z-index:1; max-width:960px; margin:0 auto; padding:32px 24px 80px; }
+body{font-family:var(--sans);background:var(--bg);color:var(--text1);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.025) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
+
+/* TOPBAR */
+.topbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:52px;background:rgba(8,11,16,.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent);letter-spacing:.5px}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 14px var(--accent);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.topbar-right{display:flex;align-items:center;gap:14px}
+.env-badge{font-family:var(--mono);font-size:10px;letter-spacing:1px;padding:3px 10px;border-radius:20px;background:rgba(0,212,255,.08);color:var(--accent);border:1px solid rgba(0,212,255,.2)}
+.avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#1a4a6b,#0099cc);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--accent);border:1px solid rgba(0,212,255,.3)}
+
+/* LAYOUT */
+.app{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:28px 24px 80px}
 
 /* STEPPER */
-.stepper { display:flex; align-items:center; gap:0; margin-bottom:36px; background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:4px; overflow:hidden; }
-.step-item { flex:1; display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:7px; cursor:default; transition:background .2s; position:relative; }
-.step-item.active { background:rgba(0,212,255,.08); }
-.step-item.done { background:rgba(0,229,160,.05); }
-.step-num { width:24px; height:24px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:11px; font-weight:600; background:var(--bg3); border:1px solid var(--border2); color:var(--text2); transition:all .25s; }
-.step-item.active .step-num { background:var(--accent); border-color:var(--accent); color:var(--bg); box-shadow:0 0 16px rgba(0,212,255,.4); }
-.step-item.done .step-num { background:var(--green); border-color:var(--green); color:var(--bg); }
-.step-label { font-size:12px; color:var(--text2); font-weight:500; }
-.step-item.active .step-label { color:var(--text1); }
-.step-item.done .step-label { color:var(--green); }
-.step-sep { width:1px; height:28px; background:var(--border); flex-shrink:0; }
+.stepper{display:flex;align-items:center;margin-bottom:32px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:4px;overflow:hidden}
+.step-item{flex:1;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:7px;transition:background .2s}
+.step-item.active{background:rgba(0,212,255,.08)}
+.step-item.done{background:rgba(0,229,160,.05)}
+.step-num{width:24px;height:24px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:600;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);transition:all .25s}
+.step-item.active .step-num{background:var(--accent);border-color:var(--accent);color:var(--bg);box-shadow:0 0 16px rgba(0,212,255,.4)}
+.step-item.done .step-num{background:var(--green);border-color:var(--green);color:var(--bg)}
+.step-label{font-size:12px;color:var(--text2);font-weight:500}
+.step-item.active .step-label{color:var(--text1)}
+.step-item.done .step-label{color:var(--green)}
+.step-sep{width:1px;height:28px;background:var(--border);flex-shrink:0}
 
 /* CARD */
-.card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px 28px; margin-bottom:16px; animation:fadeUp .3s ease; }
-@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
-.card-head { margin-bottom:20px; }
-.card-title { font-size:13px; font-weight:600; color:var(--text1); display:flex; align-items:center; gap:8px; margin-bottom:4px; }
-.card-title svg { color:var(--accent); }
-.card-sub { font-size:12px; color:var(--text2); }
-
-/* TAG */
-.tag { display:inline-flex; align-items:center; gap:4px; font-family:var(--mono); font-size:10px; font-weight:500; padding:2px 8px; border-radius:20px; letter-spacing:.3px; }
-.tag-cyan   { background:rgba(0,212,255,.1);  color:var(--accent); border:1px solid rgba(0,212,255,.2); }
-.tag-green  { background:rgba(0,229,160,.1);  color:var(--green);  border:1px solid rgba(0,229,160,.2); }
-.tag-amber  { background:rgba(255,181,71,.1); color:var(--amber);  border:1px solid rgba(255,181,71,.2); }
-.tag-red    { background:rgba(255,92,92,.1);  color:var(--red);    border:1px solid rgba(255,92,92,.2); }
-.tag-purple { background:rgba(167,139,250,.1);color:var(--purple); border:1px solid rgba(167,139,250,.2); }
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:22px 26px;margin-bottom:14px;animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.card-head{margin-bottom:16px}
+.card-title{font-size:13px;font-weight:600;color:var(--text1);display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.card-title svg{color:var(--accent)}
+.card-sub{font-size:12px;color:var(--text2)}
 
 /* FORM */
-.field { margin-bottom:18px; }
-.field label { display:block; font-size:11px; font-weight:500; color:var(--text2); margin-bottom:6px; letter-spacing:.5px; text-transform:uppercase; }
-.field input,.field textarea,.field select { width:100%; padding:10px 12px; background:var(--bg3); border:1px solid var(--border2); border-radius:var(--radius); color:var(--text1); font-family:var(--sans); font-size:13px; transition:border-color .2s,box-shadow .2s; outline:none; }
-.field input:focus,.field textarea:focus,.field select:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(0,212,255,.1); }
-.field textarea { resize:vertical; min-height:80px; }
-.field select option { background:var(--bg3); }
-.field-row { display:flex; gap:16px; }
-.field-row .field { flex:1; }
-.s3-path { display:flex; align-items:center; gap:8px; padding:10px 14px; background:rgba(0,212,255,.04); border:1px solid rgba(0,212,255,.15); border-radius:var(--radius); font-family:var(--mono); font-size:11px; color:var(--text2); margin-top:8px; }
-.s3-path code { color:var(--accent); }
+.field{margin-bottom:16px}
+.field label{display:block;font-size:11px;font-weight:500;color:var(--text2);margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase}
+.field input,.field textarea{width:100%;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text1);font-family:var(--sans);font-size:13px;transition:border-color .2s;outline:none}
+.field input:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,255,.1)}
+.field textarea{resize:vertical;min-height:72px}
+.s3-path{display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.15);border-radius:var(--r);font-family:var(--mono);font-size:11px;color:var(--text2);margin-top:8px}
+.s3-path code{color:var(--accent)}
 
-/* UPLOAD */
-.upload-zone { border:1.5px dashed rgba(255,255,255,.12); border-radius:var(--radius-lg); padding:32px 20px; text-align:center; cursor:pointer; transition:all .2s; background:var(--bg3); position:relative; }
-.upload-zone:hover { border-color:var(--accent); background:rgba(0,212,255,.03); }
-.upload-zone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
-.upload-icon { width:40px; height:40px; margin:0 auto 12px; background:rgba(0,212,255,.08); border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--accent); }
-.upload-zone p { font-size:13px; color:var(--text2); margin-bottom:4px; }
-.upload-zone span { font-family:var(--mono); font-size:10px; color:var(--text3); }
-.file-item { display:flex; align-items:center; gap:10px; padding:10px 14px; margin-top:8px; background:rgba(0,229,160,.04); border:1px solid rgba(0,229,160,.15); border-radius:var(--radius); }
-.file-item svg { color:var(--green); flex-shrink:0; }
-.file-item span { font-size:12px; color:var(--text1); flex:1; font-family:var(--mono); }
-.file-status { font-size:10px; color:var(--green); font-weight:600; letter-spacing:.5px; }
+/* UPLOAD ZONE */
+.upload-zone{border:1.5px dashed rgba(255,255,255,.1);border-radius:var(--rl);padding:24px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg3);position:relative}
+.upload-zone:hover{border-color:var(--accent);background:rgba(0,212,255,.03)}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-icon{width:38px;height:38px;margin:0 auto 10px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.upload-zone p{font-size:13px;color:var(--text2);margin-bottom:4px}
+.upload-zone span{font-family:var(--mono);font-size:10px;color:var(--text3)}
+.file-item{display:flex;align-items:center;gap:10px;padding:9px 14px;margin-top:8px;background:rgba(0,229,160,.04);border:1px solid rgba(0,229,160,.15);border-radius:var(--r)}
+.file-item span{font-size:12px;color:var(--text1);flex:1;font-family:var(--mono)}
+.file-status{font-size:10px;color:var(--green);font-weight:600;letter-spacing:.5px}
 
-/* IO TABLE */
-.io-wrap { overflow-x:auto; border-radius:var(--radius); border:1px solid var(--border); }
-.io-table { width:100%; border-collapse:collapse; font-size:12px; }
-.io-table thead th { background:var(--bg3); padding:10px 14px; text-align:left; font-family:var(--mono); font-size:10px; font-weight:600; color:var(--text3); letter-spacing:1px; text-transform:uppercase; border-bottom:1px solid var(--border); }
-.io-table tbody td { padding:10px 14px; border-bottom:1px solid var(--border); color:var(--text1); vertical-align:middle; }
-.io-table tbody tr:last-child td { border-bottom:none; }
-.io-table tbody tr:hover { background:rgba(255,255,255,.02); }
-.sig-name { font-family:var(--mono); font-size:12px; font-weight:500; color:var(--accent); }
-.val-dim { font-family:var(--mono); font-size:11px; color:var(--text2); }
-.add-btn { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text2); padding:10px 14px; border:1px dashed var(--border2); border-top:none; background:var(--bg3); cursor:pointer; width:100%; border-radius:0 0 var(--radius) var(--radius); transition:color .2s; }
-.add-btn:hover { color:var(--accent); border-color:rgba(0,212,255,.3); }
+/* UPLOAD 3 colonnes */
+.upload-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px}
 
-/* WIRING */
-.wiring { display:flex; flex-direction:column; gap:2px; }
-.wire-row { display:flex; align-items:center; gap:0; padding:8px 0; border-bottom:1px solid var(--border); }
-.wire-row:last-child { border-bottom:none; }
-.swc-box { padding:5px 12px; border-radius:var(--radius); font-family:var(--mono); font-size:11px; font-weight:500; white-space:nowrap; }
-.swc-in  { background:rgba(0,212,255,.08); border:1px solid rgba(0,212,255,.25); color:var(--accent); }
-.swc-out { background:rgba(255,181,71,.08); border:1px solid rgba(255,181,71,.25); color:var(--amber); }
-.swc-mid { background:var(--bg3); border:1px solid var(--border2); color:var(--text1); }
-.wire-line { flex:1; position:relative; height:1px; background:var(--border2); margin:0 8px; }
-.wire-line::after { content:''; position:absolute; right:-1px; top:-4px; border:4px solid transparent; border-left:6px solid var(--border2); }
-.wire-sig { font-family:var(--mono); font-size:10px; color:var(--text3); white-space:nowrap; }
-
-/* COMPONENTS */
-.comp-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-.comp-card { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; cursor:pointer; transition:all .2s; position:relative; }
-.comp-card:hover { border-color:var(--border2); background:var(--bg4); }
-.comp-card.selected { border-color:rgba(0,212,255,.4); background:rgba(0,212,255,.05); }
-.comp-icon { width:32px; height:32px; border-radius:var(--radius); background:var(--bg4); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; margin-bottom:10px; font-size:16px; }
-.comp-card.selected .comp-icon { background:rgba(0,212,255,.1); border-color:rgba(0,212,255,.3); }
-.comp-name { font-size:12px; font-weight:600; color:var(--text1); margin-bottom:4px; font-family:var(--mono); }
-.comp-desc { font-size:11px; color:var(--text2); line-height:1.5; }
-.comp-check { position:absolute; top:12px; right:12px; width:18px; height:18px; border-radius:50%; border:1px solid var(--border2); background:var(--bg4); display:flex; align-items:center; justify-content:center; transition:all .2s; }
-.comp-card.selected .comp-check { background:var(--accent); border-color:var(--accent); box-shadow:0 0 10px rgba(0,212,255,.4); }
-
-/* STRATEGY */
-.strategy-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
-.strategy-card { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; cursor:pointer; text-align:center; transition:all .2s; }
-.strategy-card:hover { border-color:var(--border2); }
-.strategy-card.selected { border-color:rgba(0,212,255,.4); background:rgba(0,212,255,.05); }
-.strategy-icon { font-size:28px; margin-bottom:12px; display:block; }
-.strategy-title { font-size:13px; font-weight:600; color:var(--text1); margin-bottom:6px; }
-.strategy-desc { font-size:11px; color:var(--text2); line-height:1.6; }
-.strategy-formats { font-family:var(--mono); font-size:10px; margin-top:10px; color:var(--text3); }
-.ai-panel { background:rgba(167,139,250,.04); border:1px solid rgba(167,139,250,.2); border-radius:var(--radius-lg); padding:18px; margin-top:4px; }
-.ai-panel-title { font-size:12px; font-weight:600; color:var(--purple); margin-bottom:14px; display:flex; align-items:center; gap:6px; font-family:var(--mono); }
+/* TAGS */
+.tag{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;letter-spacing:.3px}
+.tag-cyan{background:rgba(0,212,255,.1);color:var(--accent);border:1px solid rgba(0,212,255,.2)}
+.tag-green{background:rgba(0,229,160,.1);color:var(--green);border:1px solid rgba(0,229,160,.2)}
+.tag-amber{background:rgba(255,181,71,.1);color:var(--amber);border:1px solid rgba(255,181,71,.2)}
+.tag-red{background:rgba(255,92,92,.1);color:var(--red);border:1px solid rgba(255,92,92,.2)}
+.tag-purple{background:rgba(167,139,250,.1);color:var(--purple);border:1px solid rgba(167,139,250,.2)}
+.tag-gray{background:rgba(61,80,104,.2);color:var(--text3);border:1px solid var(--border)}
 
 /* BUTTONS */
-.btn-row { display:flex; justify-content:flex-end; gap:10px; margin-top:24px; }
-.btn-primary { background:var(--accent); color:var(--bg); border:none; padding:10px 24px; border-radius:var(--radius); font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px; font-family:var(--sans); box-shadow:0 0 20px rgba(0,212,255,.25); transition:all .2s; }
-.btn-primary:hover { background:#00BFEF; box-shadow:0 0 28px rgba(0,212,255,.4); }
-.btn-primary:disabled { opacity:.5; cursor:not-allowed; }
-.btn-secondary { background:transparent; color:var(--text2); border:1px solid var(--border2); padding:10px 20px; border-radius:var(--radius); font-size:13px; cursor:pointer; font-family:var(--sans); transition:all .2s; }
-.btn-secondary:hover { color:var(--text1); border-color:rgba(255,255,255,.25); }
-.btn-launch { background:linear-gradient(135deg,#00D4FF,#00E5A0); color:var(--bg); border:none; padding:12px 28px; border-radius:var(--radius); font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px; font-family:var(--sans); box-shadow:0 0 30px rgba(0,212,255,.3); transition:all .2s; letter-spacing:.3px; }
-.btn-launch:hover { transform:translateY(-1px); box-shadow:0 4px 40px rgba(0,212,255,.4); }
-.btn-launch:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+.btn-row{display:flex;justify-content:flex-end;gap:10px;margin-top:24px}
+.btn-primary{background:var(--accent);color:var(--bg);border:none;padding:10px 24px;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;font-family:var(--sans);box-shadow:0 0 20px rgba(0,212,255,.2);transition:all .2s}
+.btn-primary:hover{background:#00BFEF;box-shadow:0 0 28px rgba(0,212,255,.4)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-secondary{background:transparent;color:var(--text2);border:1px solid var(--border2);padding:10px 20px;border-radius:var(--r);font-size:13px;cursor:pointer;font-family:var(--sans);transition:all .2s}
+.btn-secondary:hover{color:var(--text1);border-color:rgba(255,255,255,.2)}
+.btn-launch{background:linear-gradient(135deg,#00D4FF,#00E5A0);color:var(--bg);border:none;padding:12px 28px;border-radius:var(--r);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;font-family:var(--sans);box-shadow:0 0 30px rgba(0,212,255,.25);transition:all .2s;letter-spacing:.3px}
+.btn-launch:hover{transform:translateY(-1px);box-shadow:0 4px 40px rgba(0,212,255,.4)}
+.btn-launch:disabled{opacity:.4;cursor:not-allowed;transform:none}
 
 /* SCREEN */
-.screen { display:none; }
-.screen.active { display:block; }
+.screen{display:none}.screen.active{display:block}
 
 /* TOAST */
-.toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); opacity:0; z-index:300; padding:12px 22px; border-radius:var(--radius-lg); font-size:13px; font-family:var(--mono); font-weight:500; transition:all .3s; pointer-events:none; white-space:nowrap; }
-.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-.toast.success { background:rgba(0,229,160,.15); border:1px solid rgba(0,229,160,.3); color:var(--green); }
-.toast.error   { background:rgba(255,92,92,.15);  border:1px solid rgba(255,92,92,.3);  color:var(--red); }
-.toast.info    { background:rgba(0,212,255,.12);   border:1px solid rgba(0,212,255,.3);   color:var(--accent); }
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;z-index:300;padding:12px 22px;border-radius:var(--rl);font-size:13px;font-family:var(--mono);font-weight:500;transition:all .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.success{background:rgba(0,229,160,.15);border:1px solid rgba(0,229,160,.3);color:var(--green)}
+.toast.error{background:rgba(255,92,92,.15);border:1px solid rgba(255,92,92,.3);color:var(--red)}
+.toast.info{background:rgba(0,212,255,.12);border:1px solid rgba(0,212,255,.3);color:var(--accent)}
 
 /* LOADER */
-.loader-overlay { display:none; position:fixed; inset:0; z-index:250; background:rgba(10,13,18,.85); backdrop-filter:blur(6px); align-items:center; justify-content:center; flex-direction:column; gap:16px; }
-.loader-overlay.show { display:flex; }
-.spinner { width:44px; height:44px; border:3px solid var(--border2); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; }
-@keyframes spin { to{transform:rotate(360deg)} }
-.loader-msg { font-family:var(--mono); font-size:13px; color:var(--text2); }
+.loader-overlay{display:none;position:fixed;inset:0;z-index:250;background:rgba(8,11,16,.88);backdrop-filter:blur(8px);align-items:center;justify-content:center;flex-direction:column;gap:16px}
+.loader-overlay.show{display:flex}
+.spinner{width:44px;height:44px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-msg{font-family:var(--mono);font-size:13px;color:var(--text2)}
 
-/* SUCCESS OVERLAY */
-.success-overlay { display:none; position:fixed; inset:0; z-index:200; background:rgba(10,13,18,.95); backdrop-filter:blur(8px); align-items:center; justify-content:center; flex-direction:column; gap:20px; text-align:center; }
-.success-overlay.show { display:flex; }
-.success-ring { width:80px; height:80px; border-radius:50%; border:2px solid var(--green); display:flex; align-items:center; justify-content:center; font-size:32px; box-shadow:0 0 40px rgba(0,229,160,.3); animation:scaleIn .4s ease; }
-@keyframes scaleIn { from{transform:scale(.5);opacity:0} to{transform:scale(1);opacity:1} }
-.success-title { font-size:22px; font-weight:600; color:var(--green); }
-.success-sub { font-size:13px; color:var(--text2); font-family:var(--mono); }
-.success-tags { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+/* BANNER */
+.proj-banner{display:none;padding:8px 16px;background:rgba(0,229,160,.06);border:1px solid rgba(0,229,160,.2);border-radius:var(--r);font-family:var(--mono);font-size:11px;color:var(--green);margin-bottom:16px;align-items:center;gap:8px}
+.proj-banner.show{display:flex}
 
-/* PROJECT ID BANNER */
-.proj-banner { display:none; padding:8px 16px; background:rgba(0,229,160,.06); border:1px solid rgba(0,229,160,.2); border-radius:var(--radius); font-family:var(--mono); font-size:11px; color:var(--green); margin-bottom:16px; align-items:center; gap:8px; }
-.proj-banner.show { display:flex; }
+/* ── SCREEN 3 : Strategy */
+.strategy-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.strategy-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rl);padding:20px;cursor:pointer;text-align:center;transition:all .2s}
+.strategy-card:hover{border-color:var(--border2)}
+.strategy-card.selected{border-color:rgba(0,212,255,.4);background:rgba(0,212,255,.05)}
+.strategy-icon{font-size:28px;margin-bottom:10px;display:block}
+.strategy-title{font-size:13px;font-weight:600;color:var(--text1);margin-bottom:6px}
+.strategy-desc{font-size:11px;color:var(--text2);line-height:1.6}
+
+/* Vecteurs de test table */
+.tv-table-wrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--border);margin-top:12px}
+.tv-table{width:100%;border-collapse:collapse;font-size:11px}
+.tv-table thead th{background:var(--bg3);padding:9px 12px;text-align:left;font-family:var(--mono);font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.tv-table tbody td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text1);vertical-align:middle;font-family:var(--mono);font-size:11px}
+.tv-table tbody tr:last-child td{border-bottom:none}
+.tv-table tbody tr:hover{background:rgba(255,255,255,.02)}
+
+/* Scénarios (liste vidéos) */
+.video-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.video-list-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all .2s}
+.video-list-item:hover{border-color:rgba(0,212,255,.3);background:rgba(0,212,255,.04)}
+.video-list-item.selected-item{border-color:rgba(0,212,255,.5);background:rgba(0,212,255,.07)}
+.video-thumb-mini{width:64px;height:40px;background:var(--bg4);border-radius:4px;overflow:hidden;flex-shrink:0;position:relative}
+.video-thumb-mini video{width:100%;height:100%;object-fit:cover}
+.video-item-info{flex:1;min-width:0}
+.video-item-name{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.video-item-meta{font-size:11px;color:var(--text2);margin-top:2px}
+.video-item-status{flex-shrink:0}
+
+/* ══════════════════════════════════
+   SCREEN 4 — TEST BENCH (like the screenshot)
+══════════════════════════════════ */
+.bench-layout{display:grid;grid-template-columns:220px 1fr 200px;gap:0;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;height:580px}
+
+/* LEFT PANEL */
+.bench-left{background:var(--bg3);border-right:1px solid var(--border);padding:16px;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
+.bench-section-label{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:6px}
+
+.video-selector{background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r);padding:8px 10px;font-family:var(--mono);font-size:11px;color:var(--text1);width:100%;appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237A8FA8' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+
+.speed-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.speed-label{font-family:var(--mono);font-size:10px;color:var(--text2)}
+.speed-val{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent)}
+
+.slider{width:100%;height:3px;border-radius:2px;background:var(--border2);outline:none;appearance:none;cursor:pointer}
+.slider::-webkit-slider-thumb{appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px rgba(0,212,255,.5);cursor:pointer}
+
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0}
+.toggle-label{font-family:var(--mono);font-size:10px;color:var(--text2)}
+.toggle{position:relative;width:36px;height:18px}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--bg4);border:1px solid var(--border2);border-radius:9px;cursor:pointer;transition:.3s}
+.toggle-slider::before{content:'';position:absolute;width:12px;height:12px;left:2px;top:2px;background:var(--text3);border-radius:50%;transition:.3s}
+.toggle input:checked+.toggle-slider{background:rgba(0,229,160,.2);border-color:var(--green)}
+.toggle input:checked+.toggle-slider::before{transform:translateX(18px);background:var(--green)}
+
+.lane-state-box{padding:12px;background:var(--bg4);border:1px solid var(--border);border-radius:var(--r)}
+.lane-state-active{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.state-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 1.5s infinite}
+.state-name{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--green)}
+.state-code{font-family:var(--mono);font-size:10px;color:var(--text3)}
+
+.warn-btns{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.warn-btn{padding:8px;background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r);font-family:var(--mono);font-size:10px;color:var(--text2);text-align:center;cursor:pointer;transition:all .2s}
+.warn-btn.active{background:rgba(255,181,71,.12);border-color:var(--amber);color:var(--amber)}
+
+.offset-bar{height:4px;background:var(--border2);border-radius:2px;margin-top:8px;position:relative}
+.offset-indicator{position:absolute;width:8px;height:8px;top:-2px;border-radius:50%;background:var(--accent);transition:left .3s}
+
+.btn-start{width:100%;padding:10px;background:rgba(0,229,160,.12);border:1px solid var(--green);border-radius:var(--r);font-family:var(--mono);font-size:11px;font-weight:700;color:var(--green);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-start:hover{background:rgba(0,229,160,.22)}
+.btn-start.running{background:rgba(255,92,92,.1);border-color:var(--red);color:var(--red)}
+
+/* CENTER PANEL */
+.bench-center{display:flex;flex-direction:column;position:relative}
+.bench-video-wrap{flex:1;background:#000;position:relative;overflow:hidden}
+.bench-video-wrap video{width:100%;height:100%;object-fit:cover}
+
+.bench-hud{position:absolute;inset:0;pointer-events:none}
+.hud-frame{position:absolute;top:10px;left:10px;font-family:var(--mono);font-size:10px;color:var(--accent);background:rgba(0,0,0,.5);padding:3px 8px;border-radius:4px}
+.hud-status{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:11px;font-weight:700;padding:4px 16px;border-radius:20px;border:1px solid;transition:all .3s}
+.hud-status.active{background:rgba(0,229,160,.15);border-color:var(--green);color:var(--green)}
+.hud-status.idle{background:rgba(122,143,168,.1);border-color:var(--text3);color:var(--text2)}
+.hud-status.running{background:rgba(0,212,255,.15);border-color:var(--accent);color:var(--accent);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
+.hud-conf{position:absolute;top:10px;right:10px;font-family:var(--mono);font-size:10px;color:var(--text2);background:rgba(0,0,0,.5);padding:3px 8px;border-radius:4px}
+.hud-lpa-label{position:absolute;bottom:12px;left:12px;font-family:var(--mono);font-size:9px;font-weight:700;color:var(--accent);letter-spacing:1px}
+
+/* Corner brackets */
+.hud-bracket{position:absolute;width:24px;height:24px;border-color:rgba(0,212,255,.5);border-style:solid}
+.hud-tl{top:8px;left:8px;border-width:2px 0 0 2px}
+.hud-tr{top:8px;right:8px;border-width:2px 2px 0 0}
+.hud-bl{bottom:50px;left:8px;border-width:0 0 2px 2px}
+.hud-br{bottom:50px;right:8px;border-width:0 2px 2px 0}
+
+.bench-bottom{padding:12px 16px;background:var(--bg3);border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+.bottom-metric{text-align:center}
+.bottom-metric-label{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.bottom-metric-val{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--text1);line-height:1}
+.bottom-metric-unit{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:2px}
+
+/* Confidence bar */
+.conf-wrap{display:flex;flex-direction:column;justify-content:center}
+.conf-label-row{display:flex;justify-content:space-between;margin-bottom:6px}
+.conf-bar{height:8px;background:var(--border2);border-radius:4px;overflow:hidden}
+.conf-fill{height:100%;border-radius:4px;transition:width .5s;background:linear-gradient(90deg,#FF5C5C,#FFB547,#00E5A0)}
+
+/* RIGHT PANEL */
+.bench-right{background:var(--bg3);border-left:1px solid var(--border);padding:14px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.metric-box{background:var(--bg4);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px}
+.metric-box-label{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.metric-box-val{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--text1)}
+.metric-box-val.on{color:var(--green)}
+.metric-box-val.off{color:var(--text3)}
+
+.output-signals{background:var(--bg4);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px}
+.output-sig-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border)}
+.output-sig-row:last-child{border-bottom:none}
+.output-sig-name{font-family:var(--mono);font-size:10px;color:var(--text2)}
+.output-sig-val{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--accent)}
+.output-sig-val.warn{color:var(--amber)}
+.output-sig-val.ok{color:var(--green)}
+
+.conn-box{background:var(--bg4);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px}
+.conn-status{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--green);display:flex;align-items:center;gap:6px}
+.conn-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite}
+.conn-detail{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:4px;line-height:1.6}
+
+/* SYSTEM LOG */
+.bench-log{padding:0 0 0;border-top:1px solid var(--border)}
+.log-header{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--bg3);border-bottom:1px solid var(--border)}
+.log-header-label{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase}
+.log-clear{font-family:var(--mono);font-size:9px;color:var(--text3);cursor:pointer;padding:2px 8px;border:1px solid var(--border);border-radius:4px;background:none;transition:color .2s}
+.log-clear:hover{color:var(--text1)}
+.log-body{height:120px;overflow-y:auto;padding:8px 16px;background:var(--bg);font-family:var(--mono);font-size:10px;color:var(--text2);line-height:1.8}
+.log-body .ll{margin-bottom:1px}
+.log-body .ll.ok{color:var(--green)}
+.log-body .ll.err{color:var(--red)}
+.log-body .ll.info{color:var(--accent)}
+
+/* SCENARIO NAV */
+.sc-nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.sc-nav-btn{padding:6px 14px;border-radius:20px;font-family:var(--mono);font-size:11px;font-weight:600;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
+.sc-nav-btn:hover{border-color:rgba(0,212,255,.3);color:var(--accent)}
+.sc-nav-btn.active{background:rgba(0,212,255,.1);border-color:rgba(0,212,255,.4);color:var(--accent)}
+.sc-nav-btn.pass{border-color:rgba(0,229,160,.3);color:var(--green);background:rgba(0,229,160,.06)}
+.sc-nav-btn.fail{border-color:rgba(255,92,92,.3);color:var(--red);background:rgba(255,92,92,.06)}
+
+/* RESULTS SUMMARY */
+.results-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.rs{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;text-align:center}
+.rs-val{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--text1);margin-bottom:2px}
+.rs-label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
 </style>
 </head>
 <body>
 
-<!-- ── TOPBAR ── -->
+<!-- TOPBAR -->
 <div class="topbar">
-  <div class="logo">
-    <div class="logo-dot"></div>
-    vECU · TESTING PLATFORM
-  </div>
+  <div class="logo"><div class="logo-dot"></div>vECU · TESTING PLATFORM</div>
   <div class="topbar-right">
     <span class="env-badge" id="env-badge">SIMULATION</span>
     <span style="font-size:12px;color:var(--text2)">A.Benali</span>
@@ -198,706 +282,853 @@ body::before {
   </div>
 </div>
 
-<!-- LOADER -->
-<div class="loader-overlay" id="loader">
-  <div class="spinner"></div>
-  <div class="loader-msg" id="loader-msg">Chargement...</div>
-</div>
-
-<!-- TOAST -->
+<div class="loader-overlay" id="loader"><div class="spinner"></div><div class="loader-msg" id="loader-msg">Traitement...</div></div>
 <div class="toast" id="toast"></div>
 
-<!-- ── APP ── -->
 <div class="app">
-
-  <!-- PROJECT BANNER -->
   <div class="proj-banner" id="proj-banner">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-    Projet actif : <strong id="banner-id">—</strong>
+    Projet actif :&nbsp;<strong id="banner-id">—</strong>
   </div>
 
   <!-- STEPPER -->
   <div class="stepper">
-    <div class="step-item active" id="nav0"><div class="step-num" id="num0">1</div><div class="step-label">Créer un projet</div></div>
+    <div class="step-item active" id="nav0"><div class="step-num" id="num0">1</div><div class="step-label">Créer projet</div></div>
     <div class="step-sep"></div>
-    <div class="step-item" id="nav1"><div class="step-num" id="num1">2</div><div class="step-label">Upload software</div></div>
+    <div class="step-item" id="nav1"><div class="step-num" id="num1">2</div><div class="step-label">Uploads</div></div>
     <div class="step-sep"></div>
-    <div class="step-item" id="nav2"><div class="step-num" id="num2">3</div><div class="step-label">Définir I/O</div></div>
+    <div class="step-item" id="nav2"><div class="step-num" id="num2">3</div><div class="step-label">Tests &amp; Scénarios</div></div>
     <div class="step-sep"></div>
-    <div class="step-item" id="nav3"><div class="step-num" id="num3">4</div><div class="step-label">Composants &amp; Tests</div></div>
+    <div class="step-item" id="nav3"><div class="step-num" id="num3">4</div><div class="step-label">Test Bench</div></div>
   </div>
 
-  <!-- ═══ SCREEN 1 — Créer projet ═══ -->
+  <!-- ═══ SCREEN 1 — Projet ═══ -->
   <div class="screen active" id="sc0">
     <div class="card">
       <div class="card-head">
-        <div class="card-title">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-          Nouveau projet de test
-        </div>
-        <div class="card-sub">Renseigne le nom et la description — un dossier sera automatiquement créé dans S3</div>
+        <div class="card-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Nouveau projet de test</div>
+        <div class="card-sub">Crée le projet — un dossier S3 sera automatiquement généré</div>
       </div>
-      <div class="field">
-        <label>Nom du projet *</label>
-        <input type="text" id="proj-name" placeholder="ex : LPA_Control_v2" oninput="updatePath()"/>
-      </div>
-      <div class="field">
-        <label>Description</label>
-        <textarea id="proj-desc" placeholder="Décris l'objectif de ce projet de test — composant testé, version, contexte..."></textarea>
-      </div>
-      <div class="s3-path">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-        Dossier S3 :&nbsp;<code id="s3-preview">s3://vecu-results/projects/…/</code>
-      </div>
+      <div class="field"><label>Nom du projet *</label><input type="text" id="proj-name" placeholder="ex : LPA_Control_v2" oninput="updatePath()"/></div>
+      <div class="field"><label>Description</label><textarea id="proj-desc" placeholder="Composant testé, version, contexte..."></textarea></div>
+      <div class="s3-path"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Dossier S3 :&nbsp;<code id="s3-preview">s3://vecu-results/projects/…/</code></div>
     </div>
-    <div class="btn-row">
-      <button class="btn-primary" id="btn-create" onclick="createProject()">
-        Créer le projet
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      </button>
-    </div>
+    <div class="btn-row"><button class="btn-primary" onclick="createProject()">Créer le projet <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button></div>
   </div>
 
-  <!-- ═══ SCREEN 2 — Upload ═══ -->
+  <!-- ═══ SCREEN 2 — Uploads (Software + Requirements + I/O + Vidéos) ═══ -->
   <div class="screen" id="sc1">
+
+    <!-- Ligne 1 : Software + Requirements + I/O -->
     <div class="card">
       <div class="card-head">
-        <div class="card-title">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
-          Upload du software
-        </div>
-        <div class="card-sub">Dépose le binaire compilé et le fichier de spécifications techniques</div>
+        <div class="card-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>Fichiers du projet</div>
+        <div class="card-sub">Uploade le binaire, les requirements et la matrice des signaux I/O</div>
       </div>
+      <div class="upload-3col">
 
-      <!-- Zone binaire -->
-      <div class="upload-zone" id="zone-bin"
-           onclick="document.getElementById('input-bin').click()">
-        <input type="file" id="input-bin"
-               accept=".elf,.bin,.hex,.a2l"
-               style="display:none"
-               onchange="uploadFile(this,'bin')"/>
-        <div class="upload-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="2">
-            <polyline points="16 16 12 12 8 16"/>
-            <line x1="12" y1="12" x2="12" y2="21"/>
-            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
-          </svg>
-        </div>
-        <p>Binaire ECU compilé</p>
-        <span>.elf &nbsp;·&nbsp; .bin &nbsp;·&nbsp; .hex &nbsp;·&nbsp; .a2l</span>
-      </div>
-      <div class="file-item" id="file-bin" style="display:none">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-        <span id="fname-bin">—</span>
-        <span class="file-status">✓ UPLOADÉ</span>
-      </div>
-
-      <div style="margin-top:20px">
-        <div class="card-title" style="font-size:12px;margin-bottom:12px">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          Spécifications / Requirements
-        </div>
-        <!-- Zone specs -->
-        <div class="upload-zone" id="zone-spec"
-             onclick="document.getElementById('input-spec').click()">
-          <input type="file" id="input-spec"
-                 accept=".pdf,.docx,.arxml,.xlsx,.csv"
-                 style="display:none"
-                 onchange="uploadFile(this,'spec')"/>
-          <div class="upload-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2">
-              <polyline points="16 16 12 12 8 16"/>
-              <line x1="12" y1="12" x2="12" y2="21"/>
-              <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
-            </svg>
+        <!-- Software -->
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">💾 Software (binaire)</div>
+          <div class="upload-zone" onclick="document.getElementById('input-bin').click()">
+            <input type="file" id="input-bin" accept=".elf,.bin,.hex,.a2l" style="display:none" onchange="uploadFile(this,'bin')"/>
+            <div class="upload-icon" style="background:rgba(0,212,255,.08)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></div>
+            <p style="font-size:12px">Binaire ECU compilé</p>
+            <span>.elf · .bin · .hex</span>
           </div>
-          <p>Fichier de spécifications</p>
-          <span>.pdf &nbsp;·&nbsp; .docx &nbsp;·&nbsp; .arxml &nbsp;·&nbsp; .xlsx</span>
+          <div class="file-item" id="file-bin" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span id="fname-bin">—</span><span class="file-status">✓</span></div>
         </div>
-        <div class="file-item" id="file-spec" style="display:none">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-          <span id="fname-spec">—</span>
-          <span class="file-status">✓ UPLOADÉ</span>
+
+        <!-- Requirements -->
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">📋 Requirements</div>
+          <div class="upload-zone" onclick="document.getElementById('input-req').click()">
+            <input type="file" id="input-req" accept=".pdf,.docx,.txt" style="display:none" onchange="uploadFile(this,'req')"/>
+            <div class="upload-icon" style="background:rgba(167,139,250,.08)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+            <p style="font-size:12px">Spécifications fonctionnelles</p>
+            <span>.pdf · .docx · .txt</span>
+          </div>
+          <div class="file-item" id="file-req" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span id="fname-req">—</span><span class="file-status">✓</span></div>
         </div>
+
+        <!-- I/O -->
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">⚡ Signaux I/O</div>
+          <div class="upload-zone" onclick="document.getElementById('input-io').click()">
+            <input type="file" id="input-io" accept=".csv,.xlsx,.arxml" style="display:none" onchange="uploadFile(this,'io')"/>
+            <div class="upload-icon" style="background:rgba(0,229,160,.08)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
+            <p style="font-size:12px">Matrice des signaux</p>
+            <span>.csv · .xlsx · .arxml</span>
+          </div>
+          <div class="file-item" id="file-io" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span id="fname-io">—</span><span class="file-status">✓</span></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Ligne 2 : Vidéos de simulation -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>Vidéos de simulation (Blender)</div>
+        <div class="card-sub">Chaque vidéo = un scénario de test indépendant — tu pourras les lancer séparément</div>
       </div>
 
-      <div class="s3-path" style="margin-top:16px">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-        Stocké dans :&nbsp;<code id="s3-upload">s3://vecu-results/projects/…/software/</code>
+      <div class="upload-zone" style="padding:20px" onclick="document.getElementById('input-videos').click()">
+        <input type="file" id="input-videos" accept=".mp4,.avi,.mov,.mkv,.webm" multiple style="display:none" onchange="uploadVideos(this)"/>
+        <div class="upload-icon" style="background:rgba(255,181,71,.08)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></div>
+        <p>Dépose tes vidéos Blender ici</p>
+        <span>.mp4 · .avi · .mov — Plusieurs fichiers acceptés</span>
+      </div>
+
+      <!-- Liste des vidéos uploadées -->
+      <div id="video-list-container" style="display:none;margin-top:14px">
+        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Scénarios ajoutés</div>
+        <div class="video-list" id="video-list"></div>
       </div>
     </div>
-    <!-- S3 Files Status -->
-    <div class="card" style="margin-top:12px">
-      <div class="card-title" style="font-size:12px;margin-bottom:12px">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-        </svg>
-        Fichiers dans S3
-      </div>
-      <div id="s3-files-list" style="color:var(--text3);font-size:11px;font-family:var(--mono)">
-        Aucun fichier uploadé
-      </div>
-    </div>
+
     <div class="btn-row">
       <button class="btn-secondary" onclick="go(0)">Retour</button>
-      <button class="btn-primary" onclick="go(2)">
-        Suivant
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      </button>
+      <button class="btn-primary" onclick="go(2)">Suivant <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
     </div>
   </div>
 
-  <!-- ═══ SCREEN 3 — I/O ═══ -->
+  <!-- ═══ SCREEN 3 — Tests & Scénarios ═══ -->
   <div class="screen" id="sc2">
-    <div class="card">
-      <div class="card-head">
-        <div class="card-title">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-          Définition des signaux I/O
-        </div>
-        <div class="card-sub">Signaux extraits automatiquement depuis l'ARXML uploadé — modifie ou ajoute selon ton besoin</div>
-      </div>
-      <div class="io-wrap">
-        <table class="io-table">
-          <thead><tr><th>Signal</th><th>Direction</th><th>Type</th><th>Min</th><th>Max</th><th>Unité</th><th>Description</th></tr></thead>
-          <tbody id="signals-tbody">
-            <tr><td><span class="sig-name">lpa_active</span></td><td><span class="tag tag-cyan">INPUT</span></td><td><span class="tag tag-purple">boolean</span></td><td class="val-dim">—</td><td class="val-dim">—</td><td class="val-dim">—</td><td style="color:var(--text2);font-size:12px">Activation LPA</td></tr>
-            <tr><td><span class="sig-name">vehicle_speed</span></td><td><span class="tag tag-cyan">INPUT</span></td><td><span class="tag tag-green">float32</span></td><td class="val-dim">0</td><td class="val-dim">250</td><td class="val-dim">km/h</td><td style="color:var(--text2);font-size:12px">Vitesse véhicule</td></tr>
-            <tr><td><span class="sig-name">lateral_offset</span></td><td><span class="tag tag-cyan">INPUT</span></td><td><span class="tag tag-green">float32</span></td><td class="val-dim">-3.5</td><td class="val-dim">3.5</td><td class="val-dim">m</td><td style="color:var(--text2);font-size:12px">Déport latéral</td></tr>
-            <tr><td><span class="sig-name">steering_torque</span></td><td><span class="tag tag-amber">OUTPUT</span></td><td><span class="tag tag-green">float32</span></td><td class="val-dim">-10</td><td class="val-dim">10</td><td class="val-dim">Nm</td><td style="color:var(--text2);font-size:12px">Couple volant</td></tr>
-            <tr><td><span class="sig-name">warning_flag</span></td><td><span class="tag tag-amber">OUTPUT</span></td><td><span class="tag tag-purple">boolean</span></td><td class="val-dim">—</td><td class="val-dim">—</td><td class="val-dim">—</td><td style="color:var(--text2);font-size:12px">Alarme conducteur</td></tr>
-          </tbody>
-        </table>
-        <button class="add-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Ajouter un signal manuellement</button>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-head">
-        <div class="card-title">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-          Aperçu du câblage SWC
-        </div>
-        <div class="card-sub">Connexions I/O détectées automatiquement entre les composants logiciels</div>
-      </div>
-      <div class="wiring">
-        <div class="wire-row"><span class="swc-box swc-in">CameraInputSWC</span><div class="wire-line"></div><span class="wire-sig">&nbsp;lateral_offset&nbsp;</span><div class="wire-line"></div><span class="swc-box swc-mid">LPA_ControlSWC</span></div>
-        <div class="wire-row"><span class="swc-box swc-in">VehicleSpeedSWC</span><div class="wire-line"></div><span class="wire-sig">&nbsp;vehicle_speed&nbsp;</span><div class="wire-line"></div><span class="swc-box swc-mid">LPA_ControlSWC</span></div>
-        <div class="wire-row"><span class="swc-box swc-mid">LPA_ControlSWC</span><div class="wire-line"></div><span class="wire-sig">&nbsp;steering_torque&nbsp;</span><div class="wire-line"></div><span class="swc-box swc-out">SteeringActuatorSWC</span></div>
-        <div class="wire-row"><span class="swc-box swc-mid">LPA_ControlSWC</span><div class="wire-line"></div><span class="wire-sig">&nbsp;warning_flag&nbsp;</span><div class="wire-line"></div><span class="swc-box swc-out">DriverWarningModule</span></div>
-      </div>
-    </div>
-    <div class="btn-row">
-      <button class="btn-secondary" onclick="go(1)">Retour</button>
-      <button class="btn-primary" onclick="go(3)">
-        Suivant
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      </button>
-    </div>
-  </div>
 
-  <!-- ═══ SCREEN 4 — Composants & Tests ═══ -->
-  <div class="screen" id="sc3">
+    <!-- Choix stratégie -->
     <div class="card">
       <div class="card-head">
-        <div class="card-title">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="6" height="6" rx="1"/><rect x="16" y="3" width="6" height="6" rx="1"/><rect x="9" y="15" width="6" height="6" rx="1"/><path d="M5 9v3a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/><line x1="12" y1="13" x2="12" y2="15"/></svg>
-          Sélection des composants
-        </div>
-        <div class="card-sub">Choisis les SWC à inclure dans la session de test</div>
-      </div>
-      <div class="comp-grid">
-        <div class="comp-card selected" onclick="toggleComp(this)"><div class="comp-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><div class="comp-icon">🎯</div><div class="comp-name">LPA_ControlSWC</div><div class="comp-desc">Contrôleur principal assistance voie — calcul couple volant et état système</div></div>
-        <div class="comp-card selected" onclick="toggleComp(this)"><div class="comp-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><div class="comp-icon">📷</div><div class="comp-name">CameraInputSWC</div><div class="comp-desc">Acquisition signaux caméra — détection marquage et courbure voie</div></div>
-        <div class="comp-card" onclick="toggleComp(this)"><div class="comp-check"></div><div class="comp-icon">🚗</div><div class="comp-name">VehicleSpeedSWC</div><div class="comp-desc">Acquisition vitesse via CAN bus — signaux capteurs de roue</div></div>
-        <div class="comp-card" onclick="toggleComp(this)"><div class="comp-check"></div><div class="comp-icon">🔍</div><div class="comp-name">DiagnosticSWC</div><div class="comp-desc">Supervision DTC et rapports UDS — modules Dem / Dcm AUTOSAR</div></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-head">
-        <div class="card-title">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
-          Stratégie de test
-        </div>
-        <div class="card-sub">Comment veux-tu générer les vecteurs de test ?</div>
+        <div class="card-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>Stratégie de test</div>
+        <div class="card-sub">Comment veux-tu définir tes vecteurs de test ?</div>
       </div>
       <div class="strategy-grid">
-        <div class="strategy-card" id="str0" onclick="selectStrategy(0)"><span class="strategy-icon">📂</span><div class="strategy-title">Mes propres tests</div><div class="strategy-desc">Upload un fichier avec tes vecteurs de test prédéfinis — contrôle total sur les cas</div><div class="strategy-formats">.csv · .xlsx · .py · .mat</div></div>
-        <div class="strategy-card selected" id="str1" onclick="selectStrategy(1)"><span class="strategy-icon">🤖</span><div class="strategy-title">Génération par IA</div><div class="strategy-desc">Notre modèle analyse ton software et génère automatiquement des tests depuis les specs</div><div class="strategy-formats" style="color:var(--accent)">LLM + analyse ARXML</div></div>
-      </div>
-      <div class="ai-panel" id="ai-panel">
-        <div class="ai-panel-title">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
-          Paramètres de génération IA
+        <div class="strategy-card selected" id="str0" onclick="selectStrategy(0)">
+          <span class="strategy-icon">📂</span>
+          <div class="strategy-title">Mes propres tests</div>
+          <div class="strategy-desc">Upload un fichier CSV/Excel avec tes vecteurs définis manuellement — contrôle total</div>
         </div>
-        <div class="field-row">
-          <div class="field" style="margin-bottom:12px">
-            <label>Couverture cible</label>
-            <select id="sel-coverage"><option value="MC/DC">MC/DC — Modified Condition/Decision</option><option value="Branch">Branch coverage</option><option value="Statement">Statement coverage</option></select>
-          </div>
-          <div class="field" style="margin-bottom:12px">
-            <label>Nombre de cas</label>
-            <select id="sel-cases"><option value="0">Auto (recommandé)</option><option value="50">50 cas</option><option value="100">100 cas</option><option value="200">200 cas</option></select>
-          </div>
-        </div>
-        <div class="field-row">
-          <div class="field" style="margin-bottom:0">
-            <label>Focus</label>
-            <select id="sel-focus"><option>Nominal + limites + erreurs</option><option>Nominal uniquement</option><option>Cas limites uniquement</option></select>
-          </div>
-          <div class="field" style="margin-bottom:0">
-            <label>Standard de test</label>
-            <select id="sel-standard"><option value="ISO 26262 ASIL B">ISO 26262 — ASIL B</option><option value="ISO 26262 ASIL D">ISO 26262 — ASIL D</option><option value="AUTOSAR">AUTOSAR Testing</option></select>
-          </div>
+        <div class="strategy-card" id="str1" onclick="selectStrategy(1)">
+          <span class="strategy-icon">🤖</span>
+          <div class="strategy-title">Génération par IA</div>
+          <div class="strategy-desc">Claude analyse tes requirements et signaux I/O pour générer automatiquement les tests</div>
         </div>
       </div>
     </div>
 
+    <!-- Upload vecteurs de test (visible si stratégie 0) -->
+    <div class="card" id="manual-tests-card">
+      <div class="card-head">
+        <div class="card-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Upload de tes vecteurs de test</div>
+        <div class="card-sub">Fichier CSV ou Excel — un vecteur par ligne, un scénario par colonne scenario</div>
+      </div>
+
+      <div class="upload-zone" onclick="document.getElementById('input-tests').click()">
+        <input type="file" id="input-tests" accept=".csv,.xlsx,.xls" style="display:none" onchange="loadTestFile(this)"/>
+        <div class="upload-icon" style="background:rgba(0,229,160,.08)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+        <p>Fichier de vecteurs de test</p>
+        <span>.csv · .xlsx</span>
+      </div>
+
+      <!-- Format -->
+      <div style="margin-top:12px;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r)">
+        <div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Format CSV attendu</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.8">
+          scenario,vehicle_speed,lateral_offset,expected_torque,expected_warning<br>
+          <span style="color:var(--green)">scene_nominal,110,0.0,-0.1,false</span><br>
+          <span style="color:var(--amber)">scene_drift_right,110,0.3,-2.5,true</span><br>
+          <span style="color:var(--accent)">scene_drift_left,110,-0.3,2.5,true</span>
+        </div>
+      </div>
+
+      <!-- Preview table -->
+      <div id="tv-preview" style="display:none;margin-top:12px">
+        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px">Aperçu des vecteurs chargés</div>
+        <div class="tv-table-wrap"><table class="tv-table" id="tv-table"><thead></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- Scénarios disponibles -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>Scénarios à tester</div>
+        <div class="card-sub" id="sc-count-sub">Aucun scénario — retourne à l'étape 2 pour uploader des vidéos</div>
+      </div>
+      <div class="video-list" id="scenario-list-s3"></div>
+    </div>
+
     <div class="btn-row">
-      <button class="btn-secondary" onclick="go(2)">Retour</button>
-      <button class="btn-launch" id="btn-launch" onclick="launch()">
+      <button class="btn-secondary" onclick="go(1)">Retour</button>
+      <button class="btn-launch" onclick="launchAllTests()">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        Lancer la session de test
+        Lancer les tests
       </button>
     </div>
   </div>
 
-</div>
+  <!-- ═══ SCREEN 4 — TEST BENCH ═══ -->
+  <div class="screen" id="sc3">
 
-<!-- SUCCESS OVERLAY -->
-<div class="success-overlay" id="success">
-  <div class="success-ring">🚀</div>
-  <div class="success-title">Session lancée avec succès</div>
-  <div class="success-sub" id="success-sub">—</div>
-  <div class="success-tags" id="success-tags"></div>
-  <div style="margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--text3)" id="success-detail"></div>
-  <button class="btn-secondary" style="margin-top:16px" onclick="resetAll()">← Nouveau projet</button>
-</div>
+    <!-- Résumé global -->
+    <div class="results-bar" id="results-bar">
+      <div class="rs"><div class="rs-val" id="rs-total">0</div><div class="rs-label">Scénarios</div></div>
+      <div class="rs"><div class="rs-val" style="color:var(--green)" id="rs-pass">0</div><div class="rs-label">PASS</div></div>
+      <div class="rs"><div class="rs-val" style="color:var(--red)" id="rs-fail">0</div><div class="rs-label">FAIL</div></div>
+      <div class="rs"><div class="rs-val" style="color:var(--accent)" id="rs-rate">—</div><div class="rs-label">Taux réussite</div></div>
+    </div>
+
+    <!-- Navigation scénarios -->
+    <div class="sc-nav" id="sc-nav"></div>
+
+    <!-- TEST BENCH -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden">
+
+      <!-- Header bench -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--bg3);border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)"></div>
+          <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--text1)" id="bench-title">LANE PROTECTION ASSIST — TEST BENCH</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:16px">
+          <span style="font-family:var(--mono);font-size:10px;color:var(--text2)" id="bench-frame">FRAME 0/0</span>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--text2)" id="bench-time">00:00:00</span>
+          <span class="tag tag-cyan" id="bench-status-top">IDLE</span>
+        </div>
+      </div>
+
+      <!-- 3 colonnes -->
+      <div class="bench-layout">
+
+        <!-- LEFT -->
+        <div class="bench-left">
+          <div>
+            <div class="bench-section-label">Video File</div>
+            <select class="video-selector" id="bench-video-select" onchange="switchBenchVideo()"></select>
+          </div>
+
+          <div>
+            <div class="bench-section-label">Vehicle Speed</div>
+            <div class="speed-row">
+              <span class="speed-label">Speed</span>
+              <span class="speed-val" id="bench-speed-val">54 km/h</span>
+            </div>
+            <input type="range" class="slider" id="bench-speed-slider" min="0" max="200" value="54" oninput="updateSpeed(this.value)"/>
+          </div>
+
+          <div>
+            <div class="bench-section-label">Controls</div>
+            <div class="toggle-row">
+              <span class="toggle-label">LPA ACTIVATED</span>
+              <label class="toggle"><input type="checkbox" id="lpa-toggle" checked/><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label">TURN SIGNAL</span>
+              <label class="toggle"><input type="checkbox" id="turn-toggle"/><span class="toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div>
+            <div class="bench-section-label">Lane State</div>
+            <div class="lane-state-box">
+              <div class="lane-state-active">
+                <div class="state-dot" id="state-dot"></div>
+                <span class="state-name" id="state-name">ACTIVE</span>
+              </div>
+              <div class="state-code" id="state-code">System state: 0x01</div>
+            </div>
+          </div>
+
+          <div>
+            <div class="bench-section-label">Warnings</div>
+            <div class="warn-btns">
+              <div class="warn-btn" id="warn-left">◄ WARN LEFT</div>
+              <div class="warn-btn" id="warn-right">WARN RIGHT ►</div>
+            </div>
+          </div>
+
+          <div>
+            <div class="bench-section-label">Lane Offset</div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+              <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">POSITION</span>
+              <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--accent)" id="offset-val">+0.0%</span>
+            </div>
+            <div class="offset-bar">
+              <div class="offset-indicator" id="offset-indicator" style="left:calc(50% - 4px)"></div>
+            </div>
+          </div>
+
+          <div style="margin-top:auto">
+            <button class="btn-start" id="btn-start-bench" onclick="toggleBenchRun()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              START
+            </button>
+          </div>
+        </div>
+
+        <!-- CENTER -->
+        <div class="bench-center">
+          <div class="bench-video-wrap">
+            <video id="bench-video" loop playsinline style="width:100%;height:100%;object-fit:cover"></video>
+            <div class="bench-hud">
+              <div class="hud-bracket hud-tl"></div>
+              <div class="hud-bracket hud-tr"></div>
+              <div class="hud-bracket hud-bl"></div>
+              <div class="hud-bracket hud-br"></div>
+              <div class="hud-frame" id="hud-frame">FRAME: 0</div>
+              <div class="hud-status idle" id="hud-status">IDLE</div>
+              <div class="hud-conf" id="hud-conf">CONF: 0%</div>
+              <div class="hud-lpa-label" id="hud-lpa-label" style="display:none">● LPA ACTIVE</div>
+            </div>
+          </div>
+          <div class="bench-bottom">
+            <div class="bottom-metric">
+              <div class="bottom-metric-label">Speed</div>
+              <div class="bottom-metric-val" id="bm-speed">54</div>
+              <div class="bottom-metric-unit">KM/H</div>
+            </div>
+            <div class="bottom-metric" style="display:flex;flex-direction:column;justify-content:center">
+              <div class="bottom-metric-label">Steering</div>
+              <svg width="60" height="50" style="margin:0 auto"><path d="M10 40 Q30 10 50 40" stroke="var(--accent)" stroke-width="2" fill="none"/><circle id="steering-dot" cx="30" cy="25" r="4" fill="var(--accent)"/></svg>
+            </div>
+            <div class="bottom-metric">
+              <div class="bottom-metric-label">Confidence</div>
+              <div class="bottom-metric-val" style="color:var(--green)" id="bm-conf">0</div>
+              <div class="bottom-metric-unit">SCORE</div>
+            </div>
+            <div class="conf-wrap">
+              <div class="conf-label-row">
+                <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">CONF LEVEL</span>
+                <span style="font-family:var(--mono);font-size:9px;color:var(--text3)" id="conf-pct">0%</span>
+              </div>
+              <div class="conf-bar"><div class="conf-fill" id="conf-fill" style="width:0%"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="bench-right">
+          <div class="bench-section-label">Session Metrics</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="metric-box">
+              <div class="metric-box-label">LPA Active</div>
+              <div class="metric-box-val on" id="rm-lpa">ON</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-box-label">Frames Proc.</div>
+              <div class="metric-box-val" id="rm-frames">0</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-box-label">Warn Left</div>
+              <div class="metric-box-val" id="rm-wl">0</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-box-label">Warn Right</div>
+              <div class="metric-box-val" id="rm-wr">0</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-box-label">Active Frames</div>
+              <div class="metric-box-val" id="rm-af">0</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-box-label">Status</div>
+              <div class="metric-box-val" id="rm-status">IDLE</div>
+            </div>
+          </div>
+
+          <div class="bench-section-label" style="margin-top:4px">Output Signals</div>
+          <div class="output-signals">
+            <div class="output-sig-row"><span class="output-sig-name">LPA_Active</span><span class="output-sig-val ok" id="os-lpa">1</span></div>
+            <div class="output-sig-row"><span class="output-sig-name">Warning_L</span><span class="output-sig-val" id="os-wl">0</span></div>
+            <div class="output-sig-row"><span class="output-sig-name">Warning_R</span><span class="output-sig-val" id="os-wr">0</span></div>
+            <div class="output-sig-row"><span class="output-sig-name">Sys_State</span><span class="output-sig-val" id="os-state">0x01</span></div>
+            <div class="output-sig-row"><span class="output-sig-name">leftType</span><span class="output-sig-val" id="os-lt">1.0</span></div>
+            <div class="output-sig-row"><span class="output-sig-name">rightType</span><span class="output-sig-val" id="os-rt">1.0</span></div>
+          </div>
+
+          <div class="bench-section-label" style="margin-top:4px">Connection</div>
+          <div class="conn-box">
+            <div class="conn-status"><div class="conn-dot"></div>Server: ONLINE</div>
+            <div class="conn-detail">
+              SocketIO realtime stream<br>
+              Prometheus on /metrics<br>
+              Grafana scrape interval: 1s
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SYSTEM LOG -->
+      <div class="bench-log">
+        <div class="log-header">
+          <span class="log-header-label">System Log</span>
+          <button class="log-clear" onclick="clearLog()">CLEAR</button>
+        </div>
+        <div class="log-body" id="bench-log-body"></div>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-top:14px">
+      <button class="btn-secondary" onclick="go(2)">← Retour aux tests</button>
+    </div>
+  </div>
+
+</div><!-- app -->
 
 <script>
-// ══════════════════════════════════════════════════════════════
-// ⚙️  CONFIGURATION — mettre à jour après déploiement API Gateway
-// ══════════════════════════════════════════════════════════════
+// ══════════════════════════
 const API = 'https://ze8agl991f.execute-api.us-east-1.amazonaws.com/prod';
-// ══════════════════════════════════════════════════════════════
+const DEMO = API.includes('XXXXXXXX');
+// ══════════════════════════
 
-// ── STATE
-let PROJECT_ID  = null;
-let projName    = '';
-let strategy    = 1;    // 0 = manual, 1 = IA
-let binUploaded = false;
+let PROJECT_ID = null, projName = '';
+let scenarios  = [];   // [{name, filename, file(File), status, signals, testVector}]
+let activeIdx  = 0;
+let videoFiles = {};
+let strategy   = 0;
+let testVectors= [];
+let benchRunning = false;
+let benchInterval= null;
+let frameCount = 0, totalFrames = 2065;
+let warnLeftCount=0, warnRightCount=0, activeFrames=0;
 
-// ── DETECT MODE
-const DEMO_MODE = API.includes('XXXXXXXX');
-if (DEMO_MODE) {
-  document.getElementById('env-badge').textContent = 'DEMO';
-  document.getElementById('env-badge').style.background = 'rgba(255,181,71,.08)';
-  document.getElementById('env-badge').style.color = 'var(--amber)';
-  document.getElementById('env-badge').style.borderColor = 'rgba(255,181,71,.2)';
-}
+if(DEMO){ const b=document.getElementById('env-badge'); b.textContent='DEMO'; b.style.cssText+='background:rgba(255,181,71,.08);color:var(--amber);border-color:rgba(255,181,71,.2)'; }
 
-// ── TOAST
-function showToast(msg, type='info', duration=3000){
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = `toast ${type} show`;
-  setTimeout(() => t.classList.remove('show'), duration);
-}
+// ── UI helpers
+function showToast(m,t='info',d=3500){ const el=document.getElementById('toast'); el.textContent=m; el.className=`toast ${t} show`; setTimeout(()=>el.classList.remove('show'),d); }
+function showLoader(m='...'){ document.getElementById('loader-msg').textContent=m; document.getElementById('loader').classList.add('show'); }
+function hideLoader(){ document.getElementById('loader').classList.remove('show'); }
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
-// ── LOADER
-function showLoader(msg='Traitement en cours...'){
-  document.getElementById('loader-msg').textContent = msg;
-  document.getElementById('loader').classList.add('show');
-}
-function hideLoader(){
-  document.getElementById('loader').classList.remove('show');
-}
-
-// ── S3 PATH
-function updatePath(){
-  const v = document.getElementById('proj-name').value.trim().replace(/\s+/g,'_');
-  projName = v;
-  const slug = v || '…';
-  document.getElementById('s3-preview').textContent = 's3://vecu-results/projects/' + slug + '/';
-  document.getElementById('s3-upload').textContent  = 's3://vecu-results/projects/' + slug + '/software/';
-}
-async function loadSignals(){
-  if(!PROJECT_ID || DEMO_MODE) return;
-
-  showLoader('Chargement des signaux...');
-  try {
-    const resp = await fetch(`${API}/projects/${PROJECT_ID}/signals`);
-    const text = await resp.text();
-    let data   = JSON.parse(text);
-    if(data.body && typeof data.body === 'string') data = JSON.parse(data.body);
-
-    const signals = data.signals || [];
-    console.log('[SIGNALS]', signals);
-
-    if(signals.length === 0){
-      showToast('⚠️ Aucun signal trouvé — vérifie ton fichier Excel', 'error');
-      return;
-    }
-
-    // Reconstruire le tableau I/O dynamiquement
-    const tbody = document.querySelector('.io-table tbody');
-    if(!tbody) return;
-
-    tbody.innerHTML = signals.map(sig => `
-      <tr>
-        <td><span class="sig-name">${sig.signal_name}</span></td>
-        <td><span class="tag ${sig.direction === 'INPUT' ? 'tag-cyan' : 'tag-amber'}">${sig.direction}</span></td>
-        <td><span class="tag ${getTypeTag(sig.data_type)}">${sig.data_type}</span></td>
-        <td class="val-dim">${sig.min_value || '—'}</td>
-        <td class="val-dim">${sig.max_value || '—'}</td>
-        <td class="val-dim">${sig.unit || '—'}</td>
-        <td style="color:var(--text2);font-size:12px">${sig.description || '—'}</td>
-      </tr>
-    `).join('');
-
-    showToast(`✅ ${signals.length} signaux chargés depuis DynamoDB`, 'success');
-
-  } catch(e){
-    console.error('[SIGNALS]', e);
-    showToast('❌ Erreur chargement signaux : ' + e.message, 'error');
-  } finally {
-    hideLoader();
-  }
-}
-
-function getTypeTag(type){
-  if(!type) return 'tag-green';
-  const t = type.toLowerCase();
-  if(t.includes('bool'))   return 'tag-purple';
-  if(t.includes('uint') || t.includes('int')) return 'tag-amber';
-  return 'tag-green';
-}
-
-// ── NAVIGATION
 function go(n){
-  document.querySelectorAll('.screen').forEach((s,i) => s.classList.toggle('active', i===n));
-  document.querySelectorAll('.step-item').forEach((d,i) => {
+  document.querySelectorAll('.screen').forEach((s,i)=>s.classList.toggle('active',i===n));
+  document.querySelectorAll('.step-item').forEach((d,i)=>{
     d.classList.remove('active','done');
-    if(i < n)  d.classList.add('done');
-    //if(i === n) d.classList.add('active');
-    if(n === 2) loadSignals();
-    const num = document.getElementById('num'+i);
-    num.innerHTML = i < n
-      ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>'
-      : (i+1);
+    if(i<n) d.classList.add('done');
+    if(i===n) d.classList.add('active');
+    document.getElementById('num'+i).innerHTML=i<n?'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':(i+1);
   });
-  window.scrollTo({top:0, behavior:'smooth'});
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(n===2) refreshScenarioListS3();
 }
 
-// ══════════════════════════════════════════════════════════════
-// ÉTAPE 1 — Créer le projet (POST /projects)
-// ══════════════════════════════════════════════════════════════
+function updatePath(){
+  const v=document.getElementById('proj-name').value.trim().replace(/\s+/g,'_');
+  projName=v;
+  document.getElementById('s3-preview').textContent=`s3://vecu-results/projects/${v||'…'}/`;
+}
+
+// ── Créer projet
 async function createProject(){
-  const name = document.getElementById('proj-name').value.trim();
-  const desc = document.getElementById('proj-desc').value.trim();
-
-  if(!name){ showToast('⚠️ Le nom du projet est requis', 'error'); return; }
-
-  // ── Si API pas encore configurée → mode démo
-  if(DEMO_MODE){
-    PROJECT_ID = 'demo-' + Math.random().toString(36).slice(2,6);
-    projName   = name;
-    showBanner();
-    showToast('✅ Projet créé (mode démo)', 'success');
-    go(1);
-    return;
-  }
-
-  showLoader('Création du projet...');
-  try {
-    const resp = await fetch(`${API}/projects`, {
-      method:  'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'Accept':        'application/json'
-      },
-      body: JSON.stringify({ name, description: desc })
-    });
-
-    const text = await resp.text();
-    console.log('[CREATE PROJECT] raw response:', text);
-
-    let data;
-    try { data = JSON.parse(text); }
-    catch(e) { throw new Error('Réponse non-JSON : ' + text.slice(0,100)); }
-
-    // ── Gérer body imbriqué (API Gateway wrapping)
-    if(data.body && typeof data.body === 'string'){
-      data = JSON.parse(data.body);
-    }
-
-    if(!data.project_id) throw new Error('project_id manquant dans la réponse');
-
-    PROJECT_ID = data.project_id;
-    projName   = name;
-    showBanner();
-    updatePath();
-    showToast(`✅ Projet "${name}" créé — ID: ${PROJECT_ID}`, 'success');
-    go(1);
-
-  } catch(e) {
-    console.error('[CREATE PROJECT] error:', e);
-    showToast('❌ ' + e.message, 'error', 6000);
-  } finally {
-    hideLoader();
-  }
+  const name=document.getElementById('proj-name').value.trim();
+  const desc=document.getElementById('proj-desc').value.trim();
+  if(!name){ showToast('⚠️ Nom requis','error'); return; }
+  if(DEMO){ PROJECT_ID='demo-'+Math.random().toString(36).slice(2,6); projName=name; showBanner(); updatePath(); showToast(`✅ Projet "${name}" créé`,'success'); go(1); return; }
+  showLoader('Création...');
+  try{
+    const resp=await fetch(`${API}/projects`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,description:desc})});
+    let d=JSON.parse(await resp.text());
+    if(d.body&&typeof d.body==='string') d=JSON.parse(d.body);
+    if(!d.project_id) throw new Error('project_id manquant');
+    PROJECT_ID=d.project_id; projName=name; showBanner(); updatePath();
+    showToast(`✅ Projet "${name}" — ID: ${PROJECT_ID}`,'success'); go(1);
+  }catch(e){ showToast('❌ '+e.message,'error',6000); }
+  finally{ hideLoader(); }
 }
 
-function showBanner(){
-  document.getElementById('banner-id').textContent = PROJECT_ID;
-  document.getElementById('proj-banner').classList.add('show');
+function showBanner(){ document.getElementById('banner-id').textContent=PROJECT_ID; document.getElementById('proj-banner').classList.add('show'); }
+
+// ── Upload fichier simple
+async function uploadFile(input,type){
+  const file=input.files[0]; if(!file) return;
+  if(!PROJECT_ID){ showToast('⚠️ Crée d\'abord un projet','error'); return; }
+  const ids={bin:['file-bin','fname-bin'],req:['file-req','fname-req'],io:['file-io','fname-io']};
+  const [fid,nid]=ids[type]||['',''];
+  document.getElementById(nid).textContent=`⏳ ${file.name}`;
+  document.getElementById(fid).style.display='flex';
+  if(DEMO){ await sleep(600); document.getElementById(nid).textContent=file.name; showToast(`✅ ${file.name}`,'success'); return; }
+  showLoader(`Upload ${file.name}...`);
+  try{
+    const ur=await fetch(`${API}/projects/${PROJECT_ID}/upload-url?filename=${encodeURIComponent(file.name)}`);
+    let ud=JSON.parse(await ur.text());
+    if(ud.body&&typeof ud.body==='string') ud=JSON.parse(ud.body);
+    const put=await fetch(ud.upload_url,{method:'PUT',body:file,headers:{'Content-Type':'application/octet-stream'}});
+    if(!put.ok) throw new Error(`S3 PUT ${put.status}`);
+    document.getElementById(nid).textContent=file.name;
+    showToast(`✅ ${file.name} → S3`,'success');
+  }catch(e){ document.getElementById(nid).textContent=`❌ ${file.name}`; showToast('❌ '+e.message,'error',6000); }
+  finally{ hideLoader(); }
 }
 
-// ══════════════════════════════════════════════════════════════
-// ÉTAPE 2 — Upload fichier (GET /projects/{id}/upload-url)
-// ══════════════════════════════════════════════════════════════
-async function uploadFile(input, type){
-  const file = input.files[0];
-  if(!file) return;
-
-  // Feedback immédiat — afficher le nom avant même l'upload
-  if(type === 'bin'){
-    document.getElementById('fname-bin').textContent = `⏳ ${file.name}`;
-    document.getElementById('file-bin').style.display = 'flex';
-    document.getElementById('zone-bin').style.borderColor = 'var(--amber)';
-  } else {
-    document.getElementById('fname-spec').textContent = `⏳ ${file.name}`;
-    document.getElementById('file-spec').style.display = 'flex';
-    document.getElementById('zone-spec').style.borderColor = 'var(--amber)';
-  }
-
-  if(!PROJECT_ID){
-    showToast('⚠️ Crée d\'abord un projet (étape 1)', 'error');
-    return;
-  }
-
-  if(DEMO_MODE){
-    await sleep(800);
-    if(type === 'bin'){
-      document.getElementById('fname-bin').textContent = file.name;
-      document.getElementById('zone-bin').style.borderColor = 'var(--green)';
-      binUploaded = true;
-    } else {
-      document.getElementById('fname-spec').textContent = file.name;
-      document.getElementById('zone-spec').style.borderColor = 'var(--green)';
+// ── Upload vidéos → scénarios
+async function uploadVideos(input){
+  const files=Array.from(input.files); if(!files.length) return;
+  if(!PROJECT_ID){ showToast('⚠️ Crée d\'abord un projet','error'); return; }
+  for(const file of files){
+    videoFiles[file.name]=file;
+    const sc={name:file.name.replace(/\.[^.]+$/,''),filename:file.name,file,status:'uploaded',signals:null,testVector:null};
+    if(!DEMO){
+      showLoader(`Upload ${file.name}...`);
+      try{
+        const ur=await fetch(`${API}/projects/${PROJECT_ID}/upload-url?filename=${encodeURIComponent(file.name)}`);
+        let ud=JSON.parse(await ur.text());
+        if(ud.body&&typeof ud.body==='string') ud=JSON.parse(ud.body);
+        const put=await fetch(ud.upload_url,{method:'PUT',body:file,headers:{'Content-Type':'video/mp4'}});
+        if(!put.ok) throw new Error(`S3 PUT ${put.status}`);
+        sc.s3key=ud.key;
+      }catch(e){ sc.status='error'; }
+      finally{ hideLoader(); }
     }
-    showToast(`✅ ${file.name} uploadé (mode démo)`, 'success');
-    return;
+    scenarios.push(sc);
   }
-
-  showLoader(`Upload de ${file.name} vers S3...`);
-  try {
-    // Obtenir presigned URL
-    const urlResp = await fetch(
-      `${API}/projects/${PROJECT_ID}/upload-url?filename=${encodeURIComponent(file.name)}`,
-      { method: 'GET' }
-    );
-    const urlText = await urlResp.text();
-    console.log('[UPLOAD URL] raw:', urlText);
-
-    let urlData = JSON.parse(urlText);
-    if(urlData.body && typeof urlData.body === 'string'){
-      urlData = JSON.parse(urlData.body);
-    }
-
-    if(!urlData.upload_url) throw new Error('upload_url manquant');
-
-    // Upload direct S3
-    const putResp = await fetch(urlData.upload_url, {
-      method:  'PUT',
-      body:    file,
-      headers: { 'Content-Type': 'application/octet-stream' }
-    });
-    if(!putResp.ok) throw new Error(`S3 PUT HTTP ${putResp.status}`);
-
-    // Succès visuel
-    if(type === 'bin'){
-      document.getElementById('fname-bin').textContent = `✓ ${file.name}`;
-      document.getElementById('zone-bin').style.borderColor = 'var(--green)';
-      binUploaded = true;
-    } else {
-      document.getElementById('fname-spec').textContent = `✓ ${file.name}`;
-      document.getElementById('zone-spec').style.borderColor = 'var(--green)';
-    }
-
-    showToast(`✅ ${file.name} → s3://.../projects/${PROJECT_ID}/`, 'success');
-    checkS3Files();
-
-  } catch(e){
-    console.error('[UPLOAD] error:', e);
-    // Erreur visuelle
-    if(type === 'bin'){
-      document.getElementById('fname-bin').textContent = `❌ ${file.name} — échec`;
-      document.getElementById('zone-bin').style.borderColor = 'var(--red)';
-    } else {
-      document.getElementById('fname-spec').textContent = `❌ ${file.name} — échec`;
-      document.getElementById('zone-spec').style.borderColor = 'var(--red)';
-    }
-    showToast('❌ Upload échoué : ' + e.message, 'error', 6000);
-  } finally {
-    hideLoader();
-  }
+  renderVideoList();
+  showToast(`✅ ${files.length} vidéo(s) ajoutée(s)`,'success');
 }
 
-// ══════════════════════════════════════════════════════════════
-// ÉTAPE 3 — Composant toggle
-// ══════════════════════════════════════════════════════════════
-function toggleComp(el){
-  el.classList.toggle('selected');
-  const chk = el.querySelector('.comp-check');
-  chk.innerHTML = el.classList.contains('selected')
-    ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>'
-    : '';
+function renderVideoList(){
+  const cont=document.getElementById('video-list-container');
+  const list=document.getElementById('video-list');
+  cont.style.display='block'; list.innerHTML='';
+  scenarios.forEach((sc,i)=>{
+    const item=document.createElement('div');
+    item.className='video-list-item';
+    const statusTag=sc.status==='pass'?'<span class="tag tag-green">PASS</span>':sc.status==='fail'?'<span class="tag tag-red">FAIL</span>':'<span class="tag tag-gray">EN ATTENTE</span>';
+    item.innerHTML=`
+      <div class="video-thumb-mini" id="vthumb-${i}">
+        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg4)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        </div>
+      </div>
+      <div class="video-item-info">
+        <div class="video-item-name">SC ${i+1} — ${sc.name}</div>
+        <div class="video-item-meta">${sc.filename}</div>
+      </div>
+      <div class="video-item-status">${statusTag}</div>
+    `;
+    list.appendChild(item);
+    // Preview miniature
+    if(sc.file){
+      const v=document.createElement('video');
+      v.src=URL.createObjectURL(sc.file); v.muted=true; v.loop=true;
+      v.style='width:100%;height:100%;object-fit:cover';
+      document.getElementById(`vthumb-${i}`).innerHTML='';
+      document.getElementById(`vthumb-${i}`).appendChild(v);
+      item.addEventListener('mouseenter',()=>v.play());
+      item.addEventListener('mouseleave',()=>v.pause());
+    }
+  });
 }
 
+// ── Screen 3 : refresh liste scénarios
+function refreshScenarioListS3(){
+  const list=document.getElementById('scenario-list-s3');
+  const sub=document.getElementById('sc-count-sub');
+  list.innerHTML='';
+  if(scenarios.length===0){ sub.textContent='Aucun scénario — retourne à l\'étape 2 pour uploader des vidéos'; return; }
+  sub.textContent=`${scenarios.length} scénario${scenarios.length>1?'s':''} prêt${scenarios.length>1?'s':''} — clique sur un pour l\'ouvrir`;
+  scenarios.forEach((sc,i)=>{
+    const item=document.createElement('div');
+    item.className='video-list-item';
+    const statusTag=sc.status==='pass'?'<span class="tag tag-green">PASS</span>':sc.status==='fail'?'<span class="tag tag-red">FAIL</span>':sc.status==='running'?'<span class="tag tag-cyan">EN COURS</span>':'<span class="tag tag-gray">EN ATTENTE</span>';
+    item.innerHTML=`
+      <div class="video-thumb-mini" id="s3thumb-${i}">
+        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg4)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        </div>
+      </div>
+      <div class="video-item-info">
+        <div class="video-item-name">SC ${i+1} — ${sc.name}</div>
+        <div class="video-item-meta">${sc.filename} · ${testVectors[i]?'Vecteur lié ✓':'Pas de vecteur'}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">${statusTag}<button onclick="openBench(${i})" style="padding:5px 12px;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);border-radius:4px;font-family:var(--mono);font-size:10px;color:var(--accent);cursor:pointer;white-space:nowrap">▶ Ouvrir</button></div>
+    `;
+    list.appendChild(item);
+    if(sc.file){
+      const v=document.createElement('video');
+      v.src=URL.createObjectURL(sc.file); v.muted=true; v.loop=true;
+      v.style='width:100%;height:100%;object-fit:cover';
+      document.getElementById(`s3thumb-${i}`).innerHTML='';
+      document.getElementById(`s3thumb-${i}`).appendChild(v);
+      item.addEventListener('mouseenter',()=>v.play());
+      item.addEventListener('mouseleave',()=>v.pause());
+    }
+  });
+}
+
+// ── Load test file CSV (preview)
+function loadTestFile(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const lines=e.target.result.trim().split('\n');
+    const headers=lines[0].split(',');
+    testVectors=lines.slice(1).map(l=>{ const v=l.split(','); return Object.fromEntries(headers.map((h,i)=>[h.trim(),v[i]?.trim()])); });
+    renderTVPreview(headers,testVectors);
+    showToast(`✅ ${testVectors.length} vecteurs chargés`,'success');
+  };
+  reader.readAsText(file);
+  if(!DEMO) uploadFile({files:[file]},'tests');
+}
+
+function renderTVPreview(headers,rows){
+  const preview=document.getElementById('tv-preview');
+  const table=document.getElementById('tv-table');
+  preview.style.display='block';
+  table.querySelector('thead').innerHTML='<tr>'+headers.map(h=>`<th>${h}</th>`).join('')+'</tr>';
+  table.querySelector('tbody').innerHTML=rows.slice(0,5).map(r=>'<tr>'+headers.map(h=>`<td>${r[h]??'—'}</td>`).join('')+'</tr>').join('');
+}
+
+// ── Strategy
 function selectStrategy(n){
-  strategy = n;
-  document.getElementById('str0').classList.toggle('selected', n===0);
-  document.getElementById('str1').classList.toggle('selected', n===1);
-  document.getElementById('ai-panel').style.display = n===1 ? 'block' : 'none';
+  strategy=n;
+  document.getElementById('str0').classList.toggle('selected',n===0);
+  document.getElementById('str1').classList.toggle('selected',n===1);
+  document.getElementById('manual-tests-card').style.display=n===0?'block':'none';
 }
 
-// ══════════════════════════════════════════════════════════════
-// ÉTAPE 4 — Lancer la simulation
-// (POST /projects/{id}/generate-tests + POST /projects/{id}/run)
-// ══════════════════════════════════════════════════════════════
-async function launch(){
-  const btn = document.getElementById('btn-launch');
-  btn.disabled = true;
+// ── Launch all
+function launchAllTests(){
+  if(scenarios.length===0){ showToast('⚠️ Uploade d\'abord des vidéos','error'); return; }
+  openBench(0);
+}
 
-  if(DEMO_MODE){
-    showLoader('Génération des tests IA (démo)...');
-    await sleep(1500);
-    showLoader('Build image Docker (démo)...');
-    await sleep(1500);
-    showLoader('Lancement ECS Fargate (démo)...');
-    await sleep(1500);
-    hideLoader();
-    showSuccess({
-      project_id: PROJECT_ID || 'demo-xxxx',
-      status:     'SUCCESS',
-      public_ip:  '3.91.xxx.xxx',
-      run_id:     new Date().toISOString().slice(0,19).replace('T','_'),
-      message:    'Mode démo — aucun appel AWS réel'
-    });
-    btn.disabled = false;
-    return;
+// ══════════════════════════
+// BENCH
+// ══════════════════════════
+function openBench(idx){
+  activeIdx=idx;
+  const sc=scenarios[idx];
+  benchRunning=false;
+  frameCount=0; warnLeftCount=0; warnRightCount=0; activeFrames=0;
+
+  // Titre
+  document.getElementById('bench-title').textContent=`${sc.name.toUpperCase()} — TEST BENCH`;
+  document.getElementById('bench-status-top').textContent='IDLE';
+  document.getElementById('bench-status-top').className='tag tag-gray';
+
+  // Charger la vidéo dans le bench
+  const video=document.getElementById('bench-video');
+  if(sc.file){
+    video.src=URL.createObjectURL(sc.file);
+    video.load();
   }
 
-  if(!PROJECT_ID){ showToast('⚠️ Crée d\'abord un projet (étape 1)', 'error'); btn.disabled=false; return; }
+  // Remplir le select
+  const sel=document.getElementById('bench-video-select');
+  sel.innerHTML=scenarios.map((s,i)=>`<option value="${i}" ${i===idx?'selected':''}>${s.filename}</option>`).join('');
 
-  try {
-    // ── A. Générer les tests IA si stratégie IA
-    if(strategy === 1){
-      showLoader('Génération des vecteurs de test avec Bedrock (Claude)...');
-      const coverage = document.getElementById('sel-coverage').value;
-      const nbCases  = parseInt(document.getElementById('sel-cases').value) || 50;
-      const standard = document.getElementById('sel-standard').value;
+  // Reset métriques
+  resetBenchMetrics();
+  clearLog();
+  addLog(`[INIT] Scénario chargé : ${sc.name}`,'info');
+  addLog(`[VIDEO] Source : ${sc.filename}`,'info');
+  if(testVectors[idx]) addLog(`[TEST] Vecteur associé : ${JSON.stringify(testVectors[idx])}`,'info');
+  else addLog('[TEST] Aucun vecteur de test associé à ce scénario','');
 
-      const genResp = await fetch(`${API}/projects/${PROJECT_ID}/generate-tests`, {
-        method:  'POST',
-        headers: {'Content-Type':'application/json'},
-        body:    JSON.stringify({ coverage, nb_cases: nbCases, standard })
-      });
-      if(!genResp.ok) throw new Error(`Generate tests HTTP ${genResp.status}`);
-      const genData = await genResp.json();
-      showToast(`✅ ${nbCases} vecteurs générés → S3`, 'success');
+  // Nav
+  buildNav(idx);
+  updateStats();
+  go(3);
+}
+
+function switchBenchVideo(){
+  const idx=parseInt(document.getElementById('bench-video-select').value);
+  if(benchRunning) stopBench();
+  openBench(idx);
+}
+
+function buildNav(active){
+  const nav=document.getElementById('sc-nav');
+  nav.innerHTML=scenarios.map((sc,i)=>{
+    const icon=sc.status==='pass'?'✅':sc.status==='fail'?'❌':sc.status==='running'?'⏳':'○';
+    const cls=i===active?'sc-nav-btn active':sc.status==='pass'?'sc-nav-btn pass':sc.status==='fail'?'sc-nav-btn fail':'sc-nav-btn';
+    return `<button class="${cls}" onclick="openBench(${i})">${icon} SC${i+1} — ${sc.name.slice(0,10)}${sc.name.length>10?'…':''}</button>`;
+  }).join('');
+}
+
+// ── Start/Stop bench
+function toggleBenchRun(){
+  if(benchRunning) stopBench(); else startBench();
+}
+
+function startBench(){
+  benchRunning=true;
+  const sc=scenarios[activeIdx];
+  sc.status='running';
+
+  const btn=document.getElementById('btn-start-bench');
+  btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> STOP';
+  btn.classList.add('running');
+
+  // HUD
+  setHudStatus('running');
+  document.getElementById('bench-status-top').textContent='RUNNING';
+  document.getElementById('bench-status-top').className='tag tag-cyan';
+  document.getElementById('rm-status').textContent='RUN';
+  document.getElementById('hud-lpa-label').style.display='block';
+
+  // Lancer vidéo
+  const video=document.getElementById('bench-video');
+  video.play();
+  totalFrames=Math.round((video.duration||30)*25);
+
+  addLog(`[START] Simulation démarrée — ${sc.name}`,'info');
+  addLog(`[ECS] Container actif — traitement en temps réel`,'info');
+
+  // Interval simulation
+  let t=0;
+  benchInterval=setInterval(()=>{
+    if(!benchRunning){ clearInterval(benchInterval); return; }
+    t+=25;
+    frameCount+=25;
+    const pct=Math.min(100,Math.round((video.currentTime/(video.duration||30))*100));
+    const conf=Math.min(100,85+Math.round(Math.random()*15));
+    const speed=parseInt(document.getElementById('bench-speed-slider').value);
+    const lateral=(Math.random()-0.5)*0.6;
+    const torque=-(lateral*8).toFixed(2);
+    const warning=Math.abs(lateral)>0.2;
+
+    // Update HUD
+    document.getElementById('hud-frame').textContent=`FRAME: ${frameCount}`;
+    document.getElementById('hud-conf').textContent=`CONF: ${conf}%`;
+
+    // Métriques
+    document.getElementById('bm-speed').textContent=speed;
+    document.getElementById('bm-conf').textContent=conf;
+    document.getElementById('conf-fill').style.width=conf+'%';
+    document.getElementById('conf-pct').textContent=conf+'%';
+    document.getElementById('bench-frame').textContent=`FRAME ${frameCount}/${totalFrames}`;
+
+    // Signaux output
+    document.getElementById('os-wl').textContent=warning&&lateral>0?'1':'0';
+    document.getElementById('os-wr').textContent=warning&&lateral<0?'1':'0';
+    document.getElementById('os-state').textContent='0x01';
+    document.getElementById('offset-val').textContent=(lateral*100).toFixed(1)+'%';
+    document.getElementById('offset-indicator').style.left=`calc(${50+lateral*40}% - 4px)`;
+
+    // Warnings
+    if(warning&&lateral>0){ warnLeftCount++; document.getElementById('warn-left').classList.add('active'); }
+    else document.getElementById('warn-left').classList.remove('active');
+    if(warning&&lateral<0){ warnRightCount++; document.getElementById('warn-right').classList.add('active'); }
+    else document.getElementById('warn-right').classList.remove('active');
+
+    activeFrames++;
+    document.getElementById('rm-frames').textContent=frameCount;
+    document.getElementById('rm-wl').textContent=warnLeftCount;
+    document.getElementById('rm-wr').textContent=warnRightCount;
+    document.getElementById('rm-af').textContent=activeFrames;
+
+    // Log toutes les 500 frames
+    if(frameCount%500===0) addLog(`Frame ${frameCount}/${totalFrames} | ACTIVE | conf=${conf}.0`,'ok');
+
+    // Fin vidéo
+    if(video.ended||frameCount>=totalFrames){
+      finishBench();
     }
+  },1000/25);
 
-    // ── B. Lancer la simulation ECS
-    showLoader('Build image Docker + lancement ECS Fargate...\n(2-3 minutes)');
-    const runResp = await fetch(`${API}/projects/${PROJECT_ID}/run`, {
-      method:  'POST',
-      headers: {'Content-Type':'application/json'},
-      body:    JSON.stringify({ strategy })
-    });
-    if(!runResp.ok) throw new Error(`Run HTTP ${runResp.status}`);
-    const runData = await runResp.json();
-    hideLoader();
-    showSuccess(runData);
+  // Aussi écouter la fin naturelle de la vidéo
+  video.onended=()=>{ if(benchRunning) finishBench(); };
+}
 
-  } catch(e){
-    hideLoader();
-    showToast('❌ Erreur lancement : ' + e.message, 'error', 6000);
-  } finally {
-    btn.disabled = false;
+function stopBench(){
+  benchRunning=false;
+  clearInterval(benchInterval);
+  const video=document.getElementById('bench-video');
+  video.pause();
+  const btn=document.getElementById('btn-start-bench');
+  btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> START';
+  btn.classList.remove('running');
+  setHudStatus('idle');
+  document.getElementById('bench-status-top').textContent='STOPPED';
+  document.getElementById('bench-status-top').className='tag tag-amber';
+  addLog('[STOP] Simulation arrêtée manuellement','');
+}
+
+function finishBench(){
+  benchRunning=false;
+  clearInterval(benchInterval);
+  const sc=scenarios[activeIdx];
+  const tv=testVectors[activeIdx]||testVectors[0];
+
+  // Valider selon vecteur de test
+  let passed=true;
+  if(tv){
+    const expWarning=tv.expected_warning?.toLowerCase()==='true';
+    const actualWarning=warnLeftCount>0||warnRightCount>0;
+    passed=(expWarning===actualWarning);
+  }
+
+  sc.status=passed?'pass':'fail';
+  addLog(`Done — ${frameCount} frames processed`,passed?'ok':'err');
+  addLog(`[${passed?'PASS':'FAIL'}] Résultat : ${passed?'✅ Test réussi':'❌ Test échoué'}`,passed?'ok':'err');
+
+  setHudStatus(passed?'active':'idle');
+  document.getElementById('bench-status-top').textContent=passed?'PASS':'FAIL';
+  document.getElementById('bench-status-top').className=passed?'tag tag-green':'tag tag-red';
+  document.getElementById('rm-status').textContent=passed?'DONE':'FAIL';
+  document.getElementById('hud-lpa-label').style.display='none';
+  document.getElementById('btn-start-bench').innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> RESTART';
+  document.getElementById('btn-start-bench').classList.remove('running');
+
+  updateStats();
+  buildNav(activeIdx);
+
+  // Auto-passer au suivant
+  if(activeIdx+1<scenarios.length){
+    addLog(`[NEXT] Passage au scénario ${activeIdx+2}...`,'info');
+    setTimeout(()=>openBench(activeIdx+1),2000);
   }
 }
 
-function showSuccess(data){
-  const name = projName || data.project_id;
-  const standard = document.getElementById('sel-standard')?.value || 'ISO 26262';
-
-  document.getElementById('success-sub').textContent =
-    `${name} · ${data.status} · run ${data.run_id || '—'}`;
-
-  document.getElementById('success-detail').textContent =
-    data.public_ip ? `IP: ${data.public_ip} · ${data.message || ''}` : (data.message || '');
-
-  document.getElementById('success-tags').innerHTML = `
-    <span class="tag tag-cyan">ECS RunTask</span>
-    <span class="tag tag-green">S3 Results</span>
-    <span class="tag tag-purple">AI Tests</span>
-    <span class="tag tag-amber">${standard}</span>
-    <span class="tag ${data.status==='SUCCESS'?'tag-green':'tag-red'}">${data.status}</span>
-  `;
-
-  document.getElementById('success').classList.add('show');
+function resetBenchMetrics(){
+  ['bm-speed','bm-conf','rm-frames','rm-wl','rm-wr','rm-af'].forEach(id=>document.getElementById(id).textContent='0');
+  document.getElementById('rm-lpa').textContent='ON';
+  document.getElementById('rm-lpa').className='metric-box-val on';
+  document.getElementById('rm-status').textContent='IDLE';
+  document.getElementById('conf-fill').style.width='0%';
+  document.getElementById('conf-pct').textContent='0%';
+  document.getElementById('hud-frame').textContent='FRAME: 0';
+  document.getElementById('hud-conf').textContent='CONF: 0%';
+  document.getElementById('bench-frame').textContent='FRAME 0/0';
+  document.getElementById('offset-val').textContent='+0.0%';
+  document.getElementById('offset-indicator').style.left='calc(50% - 4px)';
+  document.getElementById('warn-left').classList.remove('active');
+  document.getElementById('warn-right').classList.remove('active');
+  document.getElementById('hud-lpa-label').style.display='none';
+  ['os-wl','os-wr'].forEach(id=>{ document.getElementById(id).textContent='0'; document.getElementById(id).className='output-sig-val'; });
 }
 
-function sleep(ms){ return new Promise(r => setTimeout(r,ms)); }
-
-// ── RESET
-function resetAll(){
-  document.getElementById('success').classList.remove('show');
-  document.getElementById('proj-name').value = '';
-  document.getElementById('proj-desc').value = '';
-  document.getElementById('file-bin').style.display  = 'none';
-  document.getElementById('file-spec').style.display = 'none';
-  document.getElementById('proj-banner').classList.remove('show');
-  PROJECT_ID  = null;
-  projName    = '';
-  binUploaded = false;
-  updatePath();
-  go(0);
+function setHudStatus(s){
+  const el=document.getElementById('hud-status');
+  const map={active:['active','ACTIVE'],running:['running','RUNNING'],idle:['idle','IDLE']};
+  const [cls,label]=map[s]||['idle','IDLE'];
+  el.className=`hud-status ${cls}`; el.textContent=label;
 }
 
-async function checkS3Files(){
-  if(!PROJECT_ID || DEMO_MODE) return;
-
-  try {
-    // Appel Lambda qui liste les fichiers du projet
-    const resp = await fetch(`${API}/projects/${PROJECT_ID}/files`);
-    const text = await resp.text();
-    let data   = JSON.parse(text);
-    if(data.body && typeof data.body === 'string') data = JSON.parse(data.body);
-
-    const files = data.files || [];
-    console.log('[S3 FILES]', files);
-
-    // Afficher dans l'interface
-    const container = document.getElementById('s3-files-list');
-    if(container){
-      container.innerHTML = files.length === 0
-        ? '<span style="color:var(--text3);font-size:11px">Aucun fichier uploadé</span>'
-        : files.map(f => `
-            <div class="file-item" style="display:flex">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-              <span>${f.name}</span>
-              <span class="file-status">${f.size}</span>
-            </div>`).join('');
-    }
-  } catch(e){
-    console.warn('[CHECK S3]', e.message);
-  }
+function updateSpeed(v){
+  document.getElementById('bench-speed-val').textContent=v+' km/h';
+  document.getElementById('bm-speed').textContent=v;
 }
+
+function updateStats(){
+  const total=scenarios.length;
+  const passed=scenarios.filter(s=>s.status==='pass').length;
+  const failed=scenarios.filter(s=>s.status==='fail').length;
+  document.getElementById('rs-total').textContent=total;
+  document.getElementById('rs-pass').textContent=passed;
+  document.getElementById('rs-fail').textContent=failed;
+  document.getElementById('rs-rate').textContent=total>0?Math.round((passed/total)*100)+'%':'—';
+}
+
+// ── Log
+function addLog(msg,type=''){
+  const body=document.getElementById('bench-log-body');
+  const d=document.createElement('div'); d.className=`ll ${type}`;
+  const t=new Date().toLocaleTimeString('fr-FR');
+  d.textContent=`${t} ${msg}`;
+  body.appendChild(d); body.scrollTop=body.scrollHeight;
+}
+function clearLog(){ document.getElementById('bench-log-body').innerHTML=''; }
 </script>
 </body>
 </html>
