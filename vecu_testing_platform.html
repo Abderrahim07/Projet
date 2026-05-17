@@ -470,14 +470,56 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <div class="video-list" id="scenario-list-s3"></div>
     </div>
 
-    <div class="btn-row">
-      <button class="btn-secondary" onclick="go(1)">Retour</button>
-      <button class="btn-launch" onclick="launchAllTests()">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        Lancer les tests
-      </button>
-    </div>
+    <!-- Bouton compiler + lancer -->
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:24px">
+    
+      <!-- Statut build -->
+      <div id="build-status-bar" style="display:none;padding:12px 16px;
+           background:var(--bg3);border:1px solid var(--border);
+           border-radius:var(--r);font-family:var(--mono);font-size:11px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div id="build-dot" style="width:8px;height:8px;border-radius:50%;
+                 background:var(--amber)"></div>
+            <span id="build-status-text" style="color:var(--text2)">
+              En attente de compilation...
+            </span>
+          </div>
+          <span id="build-phase" style="color:var(--text3)"></span>
+        </div>
+        <div style="margin-top:8px;height:3px;background:var(--border2);
+             border-radius:2px;overflow:hidden">
+          <div id="build-progress" style="height:100%;width:0%;
+               background:linear-gradient(90deg,var(--accent),var(--green));
+               border-radius:2px;transition:width .5s"></div>
+        </div>
+      </div>
+    
+      <div class="btn-row" style="margin-top:0">
+        <button class="btn-secondary" onclick="go(1)">Retour</button>
+    
+        <!-- Bouton 1 : Compiler -->
+        <button class="btn-primary" id="btn-compile" onclick="compileFirmware()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2">
+            <polyline points="16 18 22 12 16 6"/>
+            <polyline points="8 6 2 12 8 18"/>
+          </svg>
+          Compiler le firmware
+        </button>
+
+    <!-- Bouton 2 : Lancer (désactivé jusqu'au build OK) -->
+    <button class="btn-launch" id="btn-launch-tests"
+            onclick="launchAllTests()" disabled
+            style="opacity:.4;cursor:not-allowed">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.5">
+        <polygon points="5 3 19 12 5 21 5 3"/>
+      </svg>
+      Lancer les tests
+    </button>
   </div>
+</div>
 
   <!-- ═══ SCREEN 4 — TEST BENCH ═══ -->
   <div class="screen" id="sc3">
@@ -1211,6 +1253,198 @@ async function uploadMultipleFiles(input, type){
   }
 
   showToast(`✅ ${files.length} fichier(s) uploadé(s)`,'success');
+}
+// ══════════════════════════════════════════════
+// COMPILER LE FIRMWARE
+// ══════════════════════════════════════════════
+let buildReady = false;
+
+async function compileFirmware(){
+  if(!PROJECT_ID){ showToast('⚠️ Crée d\'abord un projet','error'); return; }
+  if(scenarios.length === 0){
+    showToast('⚠️ Uploade d\'abord des vidéos (étape 2)','error'); return;
+  }
+
+  const btn = document.getElementById('btn-compile');
+  btn.disabled = true;
+  btn.innerHTML = `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2"
+         style="animation:spin .8s linear infinite">
+      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+    </svg>
+    Compilation en cours...
+  `;
+
+  // Afficher la barre de statut
+  const bar = document.getElementById('build-status-bar');
+  bar.style.display = 'block';
+  setBuildStatus('building', 'CodeBuild démarre...', 10);
+
+  if(DEMO){
+    // Simulation démo
+    await sleep(1000); setBuildStatus('building','Téléchargement sources C...',20);
+    await sleep(1500); setBuildStatus('building','Compilation gcc en cours...',50);
+    await sleep(1500); setBuildStatus('building','Docker build image...',75);
+    await sleep(1500); setBuildStatus('building','Push vers ECR...',90);
+    await sleep(1000); setBuildStatus('ready','✅ Firmware compilé — image ECR prête',100);
+    buildReady = true;
+    enableLaunchButton();
+    btn.disabled = false;
+    btn.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      Recompiler
+    `;
+    return;
+  }
+
+  try{
+    // Appel Lambda vecu-compile
+    const resp = await fetch(`${API}/projects/${PROJECT_ID}/compile`,{
+      method:  'POST',
+      headers: {'Content-Type':'application/json'},
+      body:    JSON.stringify({project_id: PROJECT_ID})
+    });
+    let data = JSON.parse(await resp.text());
+    if(data.body && typeof data.body==='string') data=JSON.parse(data.body);
+
+    if(!data.build_id) throw new Error('build_id manquant');
+
+    setBuildStatus('building', `Build lancé — ${data.build_id.split(':').pop().slice(0,8)}...`, 15);
+    showToast('🔨 Compilation démarrée (~2-3 min)','info');
+
+    // Polling statut build
+    await pollBuildStatus();
+
+  }catch(e){
+    setBuildStatus('failed','❌ Erreur : '+e.message, 0);
+    showToast('❌ '+e.message,'error',6000);
+    btn.disabled = false;
+    btn.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2">
+        <polyline points="16 18 22 12 16 6"/>
+        <polyline points="8 6 2 12 8 18"/>
+      </svg>
+      Réessayer
+    `;
+  }
+}
+
+// ── Polling build status
+async function pollBuildStatus(){
+  const btn = document.getElementById('btn-compile');
+  const phaseProgress = {
+    'DOWNLOAD_SOURCE': 20,
+    'INSTALL':         35,
+    'PRE_BUILD':       50,
+    'BUILD':           75,
+    'POST_BUILD':      90,
+    'UPLOAD_ARTIFACTS':95
+  };
+
+  while(true){
+    await sleep(8000); // check toutes les 8 secondes
+
+    try{
+      const resp = await fetch(`${API}/projects/${PROJECT_ID}/build-status`);
+      let data   = JSON.parse(await resp.text());
+      if(data.body && typeof data.body==='string') data=JSON.parse(data.body);
+
+      const status  = data.status;
+      const phase   = data.current_phase || '';
+      const progress= phaseProgress[phase] || 50;
+
+      console.log(`[BUILD] status=${status} phase=${phase}`);
+
+      if(status === 'BUILDING'){
+        const phaseLabels = {
+          'DOWNLOAD_SOURCE': 'Téléchargement des sources...',
+          'INSTALL':         'Installation des dépendances...',
+          'PRE_BUILD':       'Téléchargement depuis S3...',
+          'BUILD':           'Compilation gcc + Docker build...',
+          'POST_BUILD':      'Push image vers ECR...',
+          'UPLOAD_ARTIFACTS':'Finalisation...'
+        };
+        setBuildStatus('building', phaseLabels[phase] || 'Build en cours...', progress);
+
+      } else if(status === 'READY'){
+        setBuildStatus('ready','✅ Firmware compilé — image ECR prête', 100);
+        buildReady = true;
+        enableLaunchButton();
+        btn.disabled = false;
+        btn.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          ✅ Recompiler
+        `;
+        showToast('✅ Firmware prêt — tu peux lancer les tests','success');
+        return;
+
+      } else if(status === 'FAILED'){
+        setBuildStatus('failed','❌ Compilation échouée — vérifie les sources C', 0);
+        btn.disabled = false;
+        btn.innerHTML = `Réessayer`;
+        showToast('❌ Build échoué','error',6000);
+        return;
+      }
+
+    }catch(e){
+      console.warn('[POLL BUILD]', e.message);
+    }
+  }
+}
+
+// ── Helpers statut build
+function setBuildStatus(type, message, progress){
+  const dot     = document.getElementById('build-dot');
+  const text    = document.getElementById('build-status-text');
+  const bar     = document.getElementById('build-progress');
+  const phase   = document.getElementById('build-phase');
+
+  text.textContent = message;
+  bar.style.width  = progress+'%';
+
+  const colors = {
+    building: 'var(--amber)',
+    ready:    'var(--green)',
+    failed:   'var(--red)'
+  };
+  dot.style.background = colors[type] || 'var(--text3)';
+  dot.style.boxShadow  = `0 0 8px ${colors[type] || 'var(--text3)'}`;
+
+  if(type === 'building'){
+    dot.style.animation = 'pulse 1s infinite';
+    text.style.color    = 'var(--amber)';
+  } else {
+    dot.style.animation = 'none';
+    text.style.color    = colors[type];
+  }
+}
+
+function enableLaunchButton(){
+  const btn = document.getElementById('btn-launch-tests');
+  btn.disabled       = false;
+  btn.style.opacity  = '1';
+  btn.style.cursor   = 'pointer';
+}
+
+// ══════════════════════════════════════════════
+// LANCER TOUS LES TESTS
+// ══════════════════════════════════════════════
+function launchAllTests(){
+  if(!buildReady && !DEMO){
+    showToast('⚠️ Compile d\'abord le firmware','error'); return;
+  }
+  if(scenarios.length === 0){
+    showToast('⚠️ Aucun scénario disponible','error'); return;
+  }
+  openBench(0);
 }
 function clearLog(){ document.getElementById('bench-log-body').innerHTML=''; }
 </script>
