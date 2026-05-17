@@ -436,11 +436,30 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
         <div class="card-sub">Fichier CSV ou Excel — un vecteur par ligne, un scénario par colonne scenario</div>
       </div>
 
-      <div class="upload-zone" onclick="document.getElementById('input-tests').click()">
-        <input type="file" id="input-tests" accept=".csv,.xlsx,.xls" style="display:none" onchange="loadTestFile(this)"/>
-        <div class="upload-icon" style="background:rgba(0,229,160,.08)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+      <div class="upload-zone" onclick="document.getElementById('input-tests').click()"
+     style="padding:20px">
+        <input type="file" id="input-tests" accept=".csv,.xlsx,.xls"
+               style="display:none"
+               onchange="loadTestFile(this)"/>
+        <div class="upload-icon" style="background:rgba(0,229,160,.08)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="var(--green)" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+        </div>
         <p>Fichier de vecteurs de test</p>
         <span>.csv · .xlsx</span>
+      </div>
+      
+      <!-- Élément manquant — affiche le fichier chargé -->
+      <div class="file-item" id="file-tests" style="display:none">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+             stroke="var(--green)" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <span id="fname-tests">—</span>
+        <span class="file-status">✓ CHARGÉ</span>
       </div>
 
       <!-- Format -->
@@ -911,17 +930,34 @@ function refreshScenarioListS3(){
 
 // ── Load test file CSV (preview)
 function loadTestFile(input){
-  const file=input.files[0]; if(!file) return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    const lines=e.target.result.trim().split('\n');
-    const headers=lines[0].split(',');
-    testVectors=lines.slice(1).map(l=>{ const v=l.split(','); return Object.fromEntries(headers.map((h,i)=>[h.trim(),v[i]?.trim()])); });
-    renderTVPreview(headers,testVectors);
-    showToast(`✅ ${testVectors.length} vecteurs chargés`,'success');
+  const file = input.files[0];
+  if(!file) return;
+
+  // Afficher le nom du fichier
+  const nameEl = document.getElementById('fname-tests');
+  const itemEl = document.getElementById('file-tests');
+  if(nameEl) nameEl.textContent = file.name;
+  if(itemEl) itemEl.style.display = 'flex';
+
+  // Lire le CSV localement
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines   = e.target.result.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.trim());
+    testVectors   = lines.slice(1).map(l => {
+      const vals = l.split(',');
+      return Object.fromEntries(headers.map((h, i) => [h, vals[i]?.trim()]));
+    });
+    renderTVPreview(headers, testVectors);
+    showToast(`✅ ${testVectors.length} vecteurs chargés depuis ${file.name}`, 'success');
+    refreshScenarioListS3();
   };
   reader.readAsText(file);
-  if(!DEMO) uploadFile({files:[file]},'tests');
+
+  // Uploader dans S3 si projet actif
+  if(PROJECT_ID && !DEMO){
+    uploadFile({files:[file]}, 'tests');
+  }
 }
 
 function renderTVPreview(headers,rows){
