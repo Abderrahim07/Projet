@@ -847,7 +847,7 @@ async function uploadVideos(input){
         const ur=await fetch(`${API}/projects/${PROJECT_ID}/upload-url?filename=${encodeURIComponent(file.name)}`);
         let ud=JSON.parse(await ur.text());
         if(ud.body&&typeof ud.body==='string') ud=JSON.parse(ud.body);
-        const put=await fetch(ud.upload_url,{method:'PUT',body:file,headers:{'Content-Type':'video/mp4'}});
+        const put=await fetch(ud.upload_url,{method:'PUT',body:file,headers:{'Content-Type':'application/octet-stream'}});
         if(!put.ok) throw new Error(`S3 PUT ${put.status}`);
         sc.s3key=ud.key;
       }catch(e){ sc.status='error'; }
