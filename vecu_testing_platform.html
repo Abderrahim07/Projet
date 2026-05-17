@@ -854,11 +854,93 @@ async function uploadVideos(input){
       finally{ hideLoader(); }
     }
     scenarios.push(sc);
+    await saveScenarios();
   }
   renderVideoList();
   showToast(`✅ ${files.length} vidéo(s) ajoutée(s)`,'success');
 }
 
+// Nouvelle fonction
+async function saveScenarios(){
+  if(!PROJECT_ID || DEMO) return;
+  try{
+    // Lier chaque scénario à son vecteur de test
+    const data = scenarios.map(sc => {
+      const tv = testVectors.find(v => v.scenario === sc.name) || null;
+      return {
+        name:        sc.name,
+        filename:    sc.filename,
+        s3key:       sc.s3key || `projects/${PROJECT_ID}/inputs/${sc.filename}`,
+        status:      sc.status,
+        test_vector: tv
+      };
+    });
+
+    await fetch(`${API}/projects/${PROJECT_ID}/scenarios`, {
+      method:  'POST',
+      headers: {'Content-Type': 'application/json'},
+      body:    JSON.stringify({
+        project_id: PROJECT_ID,
+        scenarios:  data
+      })
+    });
+    console.log('[SAVE] scenarios.json → S3');
+  }catch(e){
+    console.warn('[SAVE SCENARIOS]', e.message);
+  }
+}
+
+async function refreshScenarioListS3(){
+  const list = document.getElementById('scenario-list-s3');
+  const sub  = document.getElementById('sc-count-sub');
+  list.innerHTML = '';
+
+  // Scénarios déjà en mémoire → afficher directement
+  if(scenarios.length > 0){
+    renderScenarioList();
+    return;
+  }
+
+  // Pas en mémoire → charger depuis S3
+  if(!PROJECT_ID || DEMO){
+    sub.textContent = 'Aucun scénario — retourne à l\'étape 2 pour uploader des vidéos';
+    return;
+  }
+
+  sub.textContent = '⏳ Chargement des scénarios depuis S3...';
+  try{
+    const resp = await fetch(`${API}/projects/${PROJECT_ID}/scenarios`);
+    let data   = JSON.parse(await resp.text());
+    if(data.body && typeof data.body === 'string') data = JSON.parse(data.body);
+
+    const saved = data.scenarios || [];
+    if(saved.length === 0){
+      sub.textContent = 'Aucun scénario — retourne à l\'étape 2 pour uploader des vidéos';
+      return;
+    }
+
+    // Reconstruire scenarios[] depuis S3
+    scenarios = saved.map(sc => ({
+      name:        sc.name,
+      filename:    sc.filename,
+      file:        null,        // pas de fichier local
+      s3key:       sc.s3key,
+      status:      sc.status || 'uploaded',
+      test_vector: sc.test_vector
+    }));
+
+    // Récupérer les vecteurs de test
+    if(testVectors.length === 0 && saved[0]?.test_vector){
+      testVectors = saved.map(sc => sc.test_vector).filter(Boolean);
+    }
+
+    renderScenarioList();
+    showToast(`✅ ${scenarios.length} scénario(s) chargé(s)`,'success');
+
+  }catch(e){
+    sub.textContent = '❌ Erreur : ' + e.message;
+  }
+}
 function renderVideoList(){
   const cont=document.getElementById('video-list-container');
   const list=document.getElementById('video-list');
@@ -893,6 +975,61 @@ function renderVideoList(){
   });
 }
 
+async function openBench(idx){
+  activeIdx = idx;
+  const sc  = scenarios[idx];
+  benchRunning = false;
+  frameCount = 0; warnLeftCount = 0; warnRightCount = 0; activeFrames = 0;
+
+  document.getElementById('bench-title').textContent = `${sc.name.toUpperCase()} — TEST BENCH`;
+  document.getElementById('bench-status-top').textContent = 'IDLE';
+  document.getElementById('bench-status-top').className   = 'tag tag-gray';
+
+  const video = document.getElementById('bench-video');
+
+  if(sc.file){
+    // Fichier local → lecture directe
+    video.src = URL.createObjectURL(sc.file);
+    video.load();
+  } else if(sc.s3key && !DEMO){
+    // Fichier S3 → presigned URL de lecture
+    try{
+      const resp = await fetch(
+        `${API}/projects/${PROJECT_ID}/read-url?key=${encodeURIComponent(sc.s3key)}`
+      );
+      let d = JSON.parse(await resp.text());
+      if(d.body && typeof d.body === 'string') d = JSON.parse(d.body);
+      if(d.read_url){
+        video.src = d.read_url;
+        video.load();
+      }
+    }catch(e){
+      console.warn('[READ URL]', e.message);
+    }
+  }
+
+  // Lier le vecteur de test
+  const tv = testVectors.find(v => v.scenario === sc.name)
+           || sc.test_vector
+           || testVectors[idx]
+           || null;
+
+  const sel = document.getElementById('bench-video-select');
+  sel.innerHTML = scenarios.map((s,i) =>
+    `<option value="${i}" ${i===idx?'selected':''}>${s.filename}</option>`
+  ).join('');
+
+  resetBenchMetrics();
+  clearLog();
+  addLog(`[INIT] Scénario : ${sc.name}`,'info');
+  addLog(`[S3] Vidéo : ${sc.s3key || sc.filename}`,'info');
+  if(tv) addLog(`[TEST] Vecteur : speed=${tv.speed} lpa=${tv.lpa_ct} turn=${tv.turn_signal}`,'info');
+  else   addLog('[TEST] Aucun vecteur associé','');
+
+  buildNav(idx);
+  updateStats();
+  go(3);
+}
 // ── Screen 3 : refresh liste scénarios
 function refreshScenarioListS3(){
   const list=document.getElementById('scenario-list-s3');
@@ -954,6 +1091,107 @@ function loadTestFile(input){
     })();
   }
 }
+async function startBenchECS(){
+  const sc = scenarios[activeIdx];
+  const tv = testVectors.find(v => v.scenario === sc.name)
+           || sc.test_vector
+           || testVectors[0]
+           || {};
+
+  addLog(`[ECS] Lancement RunTask — scénario : ${sc.name}`,'info');
+  addLog(`[ECS] Paramètres : speed=${tv.speed||54} lpa=${tv.lpa_ct||1}`,'info');
+
+  try{
+    const resp = await fetch(`${API}/projects/${PROJECT_ID}/run`, {
+      method:  'POST',
+      headers: {'Content-Type': 'application/json'},
+      body:    JSON.stringify({
+        scenario_file: sc.filename,
+        scenario_name: sc.name,
+        scenario_s3key:sc.s3key,
+        speed:         tv.speed       || '54',
+        lpa_ct:        tv.lpa_ct      || '1',
+        turn_signal:   tv.turn_signal || '0',
+        expected_LPA_Active:    tv.expected_LPA_Active    || '1',
+        expected_Warning_Left:  tv.expected_Warning_Left  || '0',
+        expected_Warning_Right: tv.expected_Warning_Right || '0'
+      })
+    });
+
+    let data = JSON.parse(await resp.text());
+    if(data.body && typeof data.body === 'string') data = JSON.parse(data.body);
+
+    addLog(`[ECS] Task ARN : ${data.task_arn?.split('/').pop()}`,'info');
+    addLog(`[ECS] IP publique : ${data.public_ip}`,'info');
+
+    // Polling des résultats toutes les 5s
+    pollResults(sc.name, data.run_id);
+
+  }catch(e){
+    addLog(`[ERROR] ${e.message}`,'err');
+    sc.status = 'fail';
+    updateStats();
+  }
+}
+
+// Polling résultats S3
+async function pollResults(scenarioName, runId){
+  addLog('[POLL] Attente des résultats ECS...','info');
+  const maxAttempts = 30; // 30 x 5s = 2.5 min max
+
+  for(let i=0; i<maxAttempts; i++){
+    await sleep(5000);
+    try{
+      const resp = await fetch(
+        `${API}/projects/${PROJECT_ID}/results-status?run_id=${runId}&scenario=${scenarioName}`
+      );
+      let data = JSON.parse(await resp.text());
+      if(data.body && typeof data.body === 'string') data = JSON.parse(data.body);
+
+      if(data.status === 'DONE'){
+        const sc     = scenarios[activeIdx];
+        const passed = data.result?.status === 'PASS';
+        sc.status    = passed ? 'pass' : 'fail';
+
+        addLog(`[RESULT] ${passed?'✅ PASS':'❌ FAIL'} — ${scenarioName}`, passed?'ok':'err');
+        addLog(`[RESULT] Frames: ${data.result?.total_frames} | Warn_L: ${data.result?.warn_left} | Warn_R: ${data.result?.warn_right}`,'');
+
+        updateStats();
+        buildNav(activeIdx);
+
+        // Afficher les vrais signaux dans l'interface
+        if(data.result?.frames?.length > 0){
+          displayRealSignals(data.result.frames[data.result.frames.length-1]);
+        }
+
+        // Auto-passer au suivant
+        if(activeIdx+1 < scenarios.length){
+          addLog(`[NEXT] Scénario suivant dans 3s...`,'info');
+          setTimeout(()=>openBench(activeIdx+1), 3000);
+        }
+        return;
+
+      } else if(data.status === 'RUNNING'){
+        addLog(`[POLL] ${i+1}/${maxAttempts} — Container actif...`,'info');
+      }
+    }catch(e){
+      console.warn('[POLL]', e.message);
+    }
+  }
+  addLog('[TIMEOUT] Pas de résultat après 2.5 min','err');
+}
+
+// Afficher les vrais signaux du firmware
+function displayRealSignals(frame){
+  if(!frame) return;
+  document.getElementById('os-lpa').textContent   = frame.active ? '1' : '0';
+  document.getElementById('os-wl').textContent    = frame.warn_L ? '1' : '0';
+  document.getElementById('os-wr').textContent    = frame.warn_R ? '1' : '0';
+  document.getElementById('os-state').textContent = '0x0'+frame.cause;
+  document.getElementById('bm-conf').textContent  = Math.round(frame.conf||0);
+  document.getElementById('conf-fill').style.width = (frame.conf||0)+'%';
+  document.getElementById('hud-conf').textContent  = `CONF: ${Math.round(frame.conf||0)}%`;
+}
 function renderTVPreview(headers,rows){
   const preview=document.getElementById('tv-preview');
   const table=document.getElementById('tv-table');
@@ -979,23 +1217,6 @@ function launchAllTests(){
 // ══════════════════════════
 // BENCH
 // ══════════════════════════
-function openBench(idx){
-  activeIdx=idx;
-  const sc=scenarios[idx];
-  benchRunning=false;
-  frameCount=0; warnLeftCount=0; warnRightCount=0; activeFrames=0;
-
-  // Titre
-  document.getElementById('bench-title').textContent=`${sc.name.toUpperCase()} — TEST BENCH`;
-  document.getElementById('bench-status-top').textContent='IDLE';
-  document.getElementById('bench-status-top').className='tag tag-gray';
-
-  // Charger la vidéo dans le bench
-  const video=document.getElementById('bench-video');
-  if(sc.file){
-    video.src=URL.createObjectURL(sc.file);
-    video.load();
-  }
 
   // Remplir le select
   const sel=document.getElementById('bench-video-select');
@@ -1032,7 +1253,18 @@ function buildNav(active){
 
 // ── Start/Stop bench
 function toggleBenchRun(){
-  if(benchRunning) stopBench(); else startBench();
+  if(benchRunning){
+    stopBench();
+  } else {
+    if(buildReady && !DEMO){
+      // Build OK → lancer vraiment sur ECS
+      startBench();          // joue la vidéo localement
+      startBenchECS();       // lance ECS en parallèle
+    } else {
+      // Pas encore compilé → simulation locale
+      startBench();
+    }
+  }
 }
 
 function startBench(){
