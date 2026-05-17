@@ -327,17 +327,30 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       </div>
       <div class="upload-3col">
 
-        <!-- Software -->
-        <div>
-          <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">💾 Software (binaire)</div>
-          <div class="upload-zone" onclick="document.getElementById('input-bin').click()">
-            <input type="file" id="input-bin" accept=".elf,.bin,.hex,.a2l" style="display:none" onchange="uploadFile(this,'bin')"/>
-            <div class="upload-icon" style="background:rgba(0,212,255,.08)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></div>
-            <p style="font-size:12px">Binaire ECU compilé</p>
-            <span>.elf · .bin · .hex</span>
-          </div>
-          <div class="file-item" id="file-bin" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span id="fname-bin">—</span><span class="file-status">✓</span></div>
+       <!-- Software -->
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">
+          💾 Software (sources C)
         </div>
+        <div class="upload-zone" onclick="document.getElementById('input-bin').click()">
+          <input type="file" id="input-bin"
+                 accept=".c,.h,.elf,.bin,.hex,.a2l,.cpp"
+                 multiple
+                 style="display:none"
+                 onchange="uploadMultipleFiles(this,'bin')"/>
+          <div class="upload-icon" style="background:rgba(0,212,255,.08)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
+              <polyline points="16 16 12 12 8 16"/>
+              <line x1="12" y1="12" x2="12" y2="21"/>
+              <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+            </svg>
+          </div>
+          <p style="font-size:12px">Fichiers sources du firmware</p>
+          <span>.c · .h · .elf · Plusieurs fichiers acceptés</span>
+        </div>
+        <!-- Liste des fichiers uploadés -->
+        <div id="bin-files-list"></div>
+      </div>
 
         <!-- Requirements -->
         <div>
@@ -1127,6 +1140,77 @@ function addLog(msg,type=''){
   const t=new Date().toLocaleTimeString('fr-FR');
   d.textContent=`${t} ${msg}`;
   body.appendChild(d); body.scrollTop=body.scrollHeight;
+}
+async function uploadMultipleFiles(input, type){
+  const files = Array.from(input.files);
+  if(!files.length) return;
+  if(!PROJECT_ID){ showToast('⚠️ Crée d\'abord un projet','error'); return; }
+
+  const listId = type==='bin' ? 'bin-files-list' : 'spec-files-list';
+  const list   = document.getElementById(listId);
+
+  for(const file of files){
+    // Item en attente
+    const itemEl = document.createElement('div');
+    itemEl.className = 'file-item';
+    itemEl.innerHTML = `
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+      </svg>
+      <span>⏳ ${file.name}</span>
+      <span class="file-status" style="color:var(--amber)">EN COURS</span>
+    `;
+    list.appendChild(itemEl);
+
+    if(DEMO){
+      await sleep(300);
+      itemEl.innerHTML = `
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <span>${file.name}</span>
+        <span class="file-status">✓</span>
+      `;
+      continue;
+    }
+
+    try{
+      // Obtenir presigned URL
+      const ur = await fetch(
+        `${API}/projects/${PROJECT_ID}/upload-url?filename=${encodeURIComponent(file.name)}`
+      );
+      let ud = JSON.parse(await ur.text());
+      if(ud.body && typeof ud.body==='string') ud = JSON.parse(ud.body);
+
+      // Upload S3
+      const put = await fetch(ud.upload_url,{
+        method:'PUT', body:file,
+        headers:{'Content-Type':'application/octet-stream'}
+      });
+      if(!put.ok) throw new Error(`S3 PUT ${put.status}`);
+
+      // Succès
+      itemEl.innerHTML = `
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <span>${file.name}</span>
+        <span class="file-status">✓ software/</span>
+      `;
+
+    }catch(e){
+      itemEl.innerHTML = `
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+        <span>${file.name}</span>
+        <span class="file-status" style="color:var(--red)">❌ ÉCHEC</span>
+      `;
+    }
+  }
+
+  showToast(`✅ ${files.length} fichier(s) uploadé(s)`,'success');
 }
 function clearLog(){ document.getElementById('bench-log-body').innerHTML=''; }
 </script>
