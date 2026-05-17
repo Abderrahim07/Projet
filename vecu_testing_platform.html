@@ -327,17 +327,30 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       </div>
       <div class="upload-3col">
 
-        <!-- Software -->
-        <div>
-          <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">💾 Software (binaire)</div>
-          <div class="upload-zone" onclick="document.getElementById('input-bin').click()">
-            <input type="file" id="input-bin" accept=".elf,.bin,.hex,.a2l" style="display:none" onchange="uploadFile(this,'bin')"/>
-            <div class="upload-icon" style="background:rgba(0,212,255,.08)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></div>
-            <p style="font-size:12px">Binaire ECU compilé</p>
-            <span>.elf · .bin · .hex</span>
-          </div>
-          <div class="file-item" id="file-bin" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span id="fname-bin">—</span><span class="file-status">✓</span></div>
+       <!-- Software -->
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">
+          💾 Software (sources C)
         </div>
+        <div class="upload-zone" onclick="document.getElementById('input-bin').click()">
+          <input type="file" id="input-bin"
+                 accept=".c,.h,.elf,.bin,.hex,.a2l,.cpp"
+                 multiple
+                 style="display:none"
+                 onchange="uploadMultipleFiles(this,'bin')"/>
+          <div class="upload-icon" style="background:rgba(0,212,255,.08)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
+              <polyline points="16 16 12 12 8 16"/>
+              <line x1="12" y1="12" x2="12" y2="21"/>
+              <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+            </svg>
+          </div>
+          <p style="font-size:12px">Fichiers sources du firmware</p>
+          <span>.c · .h · .elf · Plusieurs fichiers acceptés</span>
+        </div>
+        <!-- Liste des fichiers uploadés -->
+        <div id="bin-files-list"></div>
+      </div>
 
         <!-- Requirements -->
         <div>
@@ -423,11 +436,30 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
         <div class="card-sub">Fichier CSV ou Excel — un vecteur par ligne, un scénario par colonne scenario</div>
       </div>
 
-      <div class="upload-zone" onclick="document.getElementById('input-tests').click()">
-        <input type="file" id="input-tests" accept=".csv,.xlsx,.xls" style="display:none" onchange="loadTestFile(this)"/>
-        <div class="upload-icon" style="background:rgba(0,229,160,.08)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+      <div class="upload-zone" onclick="document.getElementById('input-tests').click()"
+     style="padding:20px">
+        <input type="file" id="input-tests" accept=".csv,.xlsx,.xls"
+               style="display:none"
+               onchange="loadTestFile(this)"/>
+        <div class="upload-icon" style="background:rgba(0,229,160,.08)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="var(--green)" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+        </div>
         <p>Fichier de vecteurs de test</p>
         <span>.csv · .xlsx</span>
+      </div>
+      
+      <!-- Élément manquant — affiche le fichier chargé -->
+      <div class="file-item" id="file-tests" style="display:none">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+             stroke="var(--green)" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <span id="fname-tests">—</span>
+        <span class="file-status">✓ CHARGÉ</span>
       </div>
 
       <!-- Format -->
@@ -457,35 +489,58 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <div class="video-list" id="scenario-list-s3"></div>
     </div>
 
-    <!-- Barre statut build -->
-    <div id="build-status-bar" style="display:none;padding:12px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);font-family:var(--mono);font-size:11px;margin-top:12px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div style="display:flex;align-items:center;gap:8px">
-          <div id="build-dot" style="width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px var(--amber);animation:pulse 1s infinite"></div>
-          <span id="build-status-text" style="color:var(--amber)">En attente...</span>
+    <!-- Bouton compiler + lancer -->
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:24px">
+    
+      <!-- Statut build -->
+      <div id="build-status-bar" style="display:none;padding:12px 16px;
+           background:var(--bg3);border:1px solid var(--border);
+           border-radius:var(--r);font-family:var(--mono);font-size:11px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div id="build-dot" style="width:8px;height:8px;border-radius:50%;
+                 background:var(--amber)"></div>
+            <span id="build-status-text" style="color:var(--text2)">
+              En attente de compilation...
+            </span>
+          </div>
+          <span id="build-phase" style="color:var(--text3)"></span>
         </div>
-        <span id="build-phase" style="color:var(--text3);font-size:10px"></span>
+        <div style="margin-top:8px;height:3px;background:var(--border2);
+             border-radius:2px;overflow:hidden">
+          <div id="build-progress" style="height:100%;width:0%;
+               background:linear-gradient(90deg,var(--accent),var(--green));
+               border-radius:2px;transition:width .5s"></div>
+        </div>
       </div>
-      <div style="height:3px;background:var(--border2);border-radius:2px;overflow:hidden">
-        <div id="build-progress" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:2px;transition:width .5s"></div>
-      </div>
-    </div>
+    
+      <div class="btn-row" style="margin-top:0">
+        <button class="btn-secondary" onclick="go(1)">Retour</button>
+    
+        <!-- Bouton 1 : Compiler -->
+        <button class="btn-primary" id="btn-compile" onclick="compileFirmware()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2">
+            <polyline points="16 18 22 12 16 6"/>
+            <polyline points="8 6 2 12 8 18"/>
+          </svg>
+          Compiler le firmware
+        </button>
 
-    <div class="btn-row">
-      <button class="btn-secondary" onclick="go(1)">Retour</button>
-      <button class="btn-primary" id="btn-compile" onclick="compileFirmware()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-        Compiler le firmware
-      </button>
-      <button class="btn-launch" id="btn-launch-tests" onclick="launchAllTests()" disabled style="opacity:.4;cursor:not-allowed">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    <!-- Bouton 2 : Lancer (désactivé jusqu'au build OK) -->
+      <button class="btn-launch" id="btn-launch-tests"
+              onclick="launchAllTests()" disabled
+              style="opacity:.4;cursor:not-allowed">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
         Lancer les tests
       </button>
     </div>
   </div>
-
-  </div><!-- fin sc2 -->
-
+  </div>
+  
   <!-- ═══ SCREEN 4 — TEST BENCH ═══ -->
   <div class="screen" id="sc3">
 
@@ -696,7 +751,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 
 <script>
 // ══════════════════════════
-const API = 'https://XXXXXXXX.execute-api.us-east-1.amazonaws.com/prod';
+const API = 'https://ze8agl991f.execute-api.us-east-1.amazonaws.com/prod';
 const DEMO = API.includes('XXXXXXXX');
 // ══════════════════════════
 
@@ -876,27 +931,33 @@ function refreshScenarioListS3(){
 
 // ── Load test file CSV (preview)
 function loadTestFile(input){
-  const file=input.files[0]; if(!file) return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    const lines=e.target.result.trim().split('\n');
-    const headers=lines[0].split(',');
-    testVectors=lines.slice(1).map(l=>{ const v=l.split(','); return Object.fromEntries(headers.map((h,i)=>[h.trim(),v[i]?.trim()])); });
-    renderTVPreview(headers,testVectors);
-    showToast(`✅ ${testVectors.length} vecteurs chargés`,'success');
+  const file = input.files[0];
+  if(!file) return;
+
+  // Afficher le nom du fichier
+  const nameEl = document.getElementById('fname-tests');
+  const itemEl = document.getElementById('file-tests');
+  if(nameEl) nameEl.textContent = file.name;
+  if(itemEl) itemEl.style.display = 'flex';
+
+  // Lire le CSV localement
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines   = e.target.result.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.trim());
+    testVectors   = lines.slice(1).map(l => {
+      const vals = l.split(',');
+      return Object.fromEntries(headers.map((h, i) => [h, vals[i]?.trim()]));
+    });
+    renderTVPreview(headers, testVectors);
+    showToast(`✅ ${testVectors.length} vecteurs chargés depuis ${file.name}`, 'success');
+    refreshScenarioListS3();
   };
   reader.readAsText(file);
-  // Upload CSV dans specs/
+
+  // Uploader dans S3 si projet actif
   if(PROJECT_ID && !DEMO){
-    (async ()=>{
-      try{
-        const ur = await fetch(API+'/projects/'+PROJECT_ID+'/upload-url?filename='+encodeURIComponent(file.name));
-        let ud = JSON.parse(await ur.text());
-        if(ud.body && typeof ud.body==='string') ud=JSON.parse(ud.body);
-        await fetch(ud.upload_url,{method:'PUT',body:file,headers:{'Content-Type':'application/octet-stream'}});
-        console.log('[UPLOAD] '+file.name+' → S3 specs/');
-      }catch(e){ console.warn('[UPLOAD CSV]',e.message); }
-    })();
+    uploadFile({files:[file]}, 'tests');
   }
 }
 
@@ -916,102 +977,9 @@ function selectStrategy(n){
   document.getElementById('manual-tests-card').style.display=n===0?'block':'none';
 }
 
-
-// ══════════════════════════════════════════════
-// COMPILER LE FIRMWARE
-// ══════════════════════════════════════════════
-let buildReady = false;
-
-async function compileFirmware(){
-  if(!PROJECT_ID){ showToast('⚠️ Crée d\'abord un projet','error'); return; }
-  const btn = document.getElementById('btn-compile');
-  btn.disabled = true;
-  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin .8s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Compilation...';
-  const bar = document.getElementById('build-status-bar');
-  bar.style.display = 'block';
-  setBuildStatus('building','CodeBuild démarre...',5);
-
-  if(DEMO){
-    await sleep(800);  setBuildStatus('building','Téléchargement sources C...',20);
-    await sleep(1200); setBuildStatus('building','gcc compile firmware_bsw...',50);
-    await sleep(1500); setBuildStatus('building','Docker build image...',75);
-    await sleep(1200); setBuildStatus('building','Push vers ECR...',90);
-    await sleep(800);  setBuildStatus('ready','✅ Firmware compilé — image ECR prête',100);
-    buildReady = true;
-    enableLaunchBtn();
-    btn.disabled = false;
-    btn.innerHTML = '✅ Recompiler';
-    showToast('✅ Firmware prêt — tu peux lancer les tests','success');
-    return;
-  }
-
-  try{
-    const resp = await fetch(API+'/projects/'+PROJECT_ID+'/compile',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({project_id:PROJECT_ID})
-    });
-    let data = JSON.parse(await resp.text());
-    if(data.body && typeof data.body==='string') data=JSON.parse(data.body);
-    if(!data.build_id) throw new Error('build_id manquant');
-    setBuildStatus('building','Build lancé...',15);
-    showToast('🔨 Compilation démarrée (~2-3 min)','info');
-    await pollBuildStatus();
-  }catch(e){
-    setBuildStatus('failed','❌ '+e.message,0);
-    showToast('❌ '+e.message,'error',6000);
-    btn.disabled = false;
-    btn.innerHTML = 'Réessayer';
-  }
-}
-
-async function pollBuildStatus(){
-  const btn = document.getElementById('btn-compile');
-  const phases = {'DOWNLOAD_SOURCE':20,'INSTALL':35,'PRE_BUILD':55,'BUILD':78,'POST_BUILD':92};
-  const labels = {'DOWNLOAD_SOURCE':'Téléchargement sources...','INSTALL':'Installation dépendances...','PRE_BUILD':'Download depuis S3...','BUILD':'gcc + Docker build...','POST_BUILD':'Push vers ECR...'};
-  while(true){
-    await sleep(8000);
-    try{
-      const resp = await fetch(API+'/projects/'+PROJECT_ID+'/build-status');
-      let data = JSON.parse(await resp.text());
-      if(data.body && typeof data.body==='string') data=JSON.parse(data.body);
-      const status=data.status, phase=data.current_phase||'';
-      if(status==='BUILDING'){
-        setBuildStatus('building',labels[phase]||'Build en cours...',phases[phase]||50);
-      }else if(status==='READY'){
-        setBuildStatus('ready','✅ Firmware compilé — image ECR prête',100);
-        buildReady=true; enableLaunchBtn();
-        btn.disabled=false; btn.innerHTML='✅ Recompiler';
-        showToast('✅ Firmware prêt','success'); return;
-      }else if(status==='FAILED'){
-        setBuildStatus('failed','❌ Compilation échouée',0);
-        btn.disabled=false; btn.innerHTML='Réessayer';
-        showToast('❌ Build échoué','error',6000); return;
-      }
-    }catch(e){ console.warn('[POLL]',e.message); }
-  }
-}
-
-function setBuildStatus(type,msg,pct){
-  const dot=document.getElementById('build-dot');
-  const text=document.getElementById('build-status-text');
-  const bar=document.getElementById('build-progress');
-  const c={building:'var(--amber)',ready:'var(--green)',failed:'var(--red)'};
-  text.textContent=msg; bar.style.width=pct+'%';
-  dot.style.background=c[type]||'var(--text3)';
-  dot.style.boxShadow='0 0 8px '+(c[type]||'var(--text3)');
-  text.style.color=c[type]||'var(--text2)';
-  dot.style.animation=type==='building'?'pulse 1s infinite':'none';
-}
-
-function enableLaunchBtn(){
-  const btn=document.getElementById('btn-launch-tests');
-  btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer';
-}
-
 // ── Launch all
 function launchAllTests(){
-  if(!buildReady && !DEMO){ showToast('⚠️ Compile d\'abord le firmware','error'); return; }
-  if(scenarios.length===0){ showToast('⚠️ Uploade d\'abord des vidéos (étape 2)','error'); return; }
+  if(scenarios.length===0){ showToast('⚠️ Uploade d\'abord des vidéos','error'); return; }
   openBench(0);
 }
 
@@ -1251,6 +1219,269 @@ function addLog(msg,type=''){
   const t=new Date().toLocaleTimeString('fr-FR');
   d.textContent=`${t} ${msg}`;
   body.appendChild(d); body.scrollTop=body.scrollHeight;
+}
+async function uploadMultipleFiles(input, type){
+  const files = Array.from(input.files);
+  if(!files.length) return;
+  if(!PROJECT_ID){ showToast('⚠️ Crée d\'abord un projet','error'); return; }
+
+  const listId = type==='bin' ? 'bin-files-list' : 'spec-files-list';
+  const list   = document.getElementById(listId);
+
+  for(const file of files){
+    // Item en attente
+    const itemEl = document.createElement('div');
+    itemEl.className = 'file-item';
+    itemEl.innerHTML = `
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+      </svg>
+      <span>⏳ ${file.name}</span>
+      <span class="file-status" style="color:var(--amber)">EN COURS</span>
+    `;
+    list.appendChild(itemEl);
+
+    if(DEMO){
+      await sleep(300);
+      itemEl.innerHTML = `
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <span>${file.name}</span>
+        <span class="file-status">✓</span>
+      `;
+      continue;
+    }
+
+    try{
+      // Obtenir presigned URL
+      const ur = await fetch(
+        `${API}/projects/${PROJECT_ID}/upload-url?filename=${encodeURIComponent(file.name)}`
+      );
+      let ud = JSON.parse(await ur.text());
+      if(ud.body && typeof ud.body==='string') ud = JSON.parse(ud.body);
+
+      // Upload S3
+      const put = await fetch(ud.upload_url,{
+        method:'PUT', body:file,
+        headers:{'Content-Type':'application/octet-stream'}
+      });
+      if(!put.ok) throw new Error(`S3 PUT ${put.status}`);
+
+      // Succès
+      itemEl.innerHTML = `
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <span>${file.name}</span>
+        <span class="file-status">✓ software/</span>
+      `;
+
+    }catch(e){
+      itemEl.innerHTML = `
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+        <span>${file.name}</span>
+        <span class="file-status" style="color:var(--red)">❌ ÉCHEC</span>
+      `;
+    }
+  }
+
+  showToast(`✅ ${files.length} fichier(s) uploadé(s)`,'success');
+}
+// ══════════════════════════════════════════════
+// COMPILER LE FIRMWARE
+// ══════════════════════════════════════════════
+let buildReady = false;
+
+async function compileFirmware(){
+  if(!PROJECT_ID){ showToast('⚠️ Crée d\'abord un projet','error'); return; }
+  if(scenarios.length === 0){
+    showToast('⚠️ Uploade d\'abord des vidéos (étape 2)','error'); return;
+  }
+
+  const btn = document.getElementById('btn-compile');
+  btn.disabled = true;
+  btn.innerHTML = `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2"
+         style="animation:spin .8s linear infinite">
+      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+    </svg>
+    Compilation en cours...
+  `;
+
+  // Afficher la barre de statut
+  const bar = document.getElementById('build-status-bar');
+  bar.style.display = 'block';
+  setBuildStatus('building', 'CodeBuild démarre...', 10);
+
+  if(DEMO){
+    // Simulation démo
+    await sleep(1000); setBuildStatus('building','Téléchargement sources C...',20);
+    await sleep(1500); setBuildStatus('building','Compilation gcc en cours...',50);
+    await sleep(1500); setBuildStatus('building','Docker build image...',75);
+    await sleep(1500); setBuildStatus('building','Push vers ECR...',90);
+    await sleep(1000); setBuildStatus('ready','✅ Firmware compilé — image ECR prête',100);
+    buildReady = true;
+    enableLaunchButton();
+    btn.disabled = false;
+    btn.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      Recompiler
+    `;
+    return;
+  }
+
+  try{
+    // Appel Lambda vecu-compile
+    const resp = await fetch(`${API}/projects/${PROJECT_ID}/compile`,{
+      method:  'POST',
+      headers: {'Content-Type':'application/json'},
+      body:    JSON.stringify({project_id: PROJECT_ID})
+    });
+    let data = JSON.parse(await resp.text());
+    if(data.body && typeof data.body==='string') data=JSON.parse(data.body);
+
+    if(!data.build_id) throw new Error('build_id manquant');
+
+    setBuildStatus('building', `Build lancé — ${data.build_id.split(':').pop().slice(0,8)}...`, 15);
+    showToast('🔨 Compilation démarrée (~2-3 min)','info');
+
+    // Polling statut build
+    await pollBuildStatus();
+
+  }catch(e){
+    setBuildStatus('failed','❌ Erreur : '+e.message, 0);
+    showToast('❌ '+e.message,'error',6000);
+    btn.disabled = false;
+    btn.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2">
+        <polyline points="16 18 22 12 16 6"/>
+        <polyline points="8 6 2 12 8 18"/>
+      </svg>
+      Réessayer
+    `;
+  }
+}
+
+// ── Polling build status
+async function pollBuildStatus(){
+  const btn = document.getElementById('btn-compile');
+  const phaseProgress = {
+    'DOWNLOAD_SOURCE': 20,
+    'INSTALL':         35,
+    'PRE_BUILD':       50,
+    'BUILD':           75,
+    'POST_BUILD':      90,
+    'UPLOAD_ARTIFACTS':95
+  };
+
+  while(true){
+    await sleep(8000); // check toutes les 8 secondes
+
+    try{
+      const resp = await fetch(`${API}/projects/${PROJECT_ID}/build-status`);
+      let data   = JSON.parse(await resp.text());
+      if(data.body && typeof data.body==='string') data=JSON.parse(data.body);
+
+      const status  = data.status;
+      const phase   = data.current_phase || '';
+      const progress= phaseProgress[phase] || 50;
+
+      console.log(`[BUILD] status=${status} phase=${phase}`);
+
+      if(status === 'BUILDING'){
+        const phaseLabels = {
+          'DOWNLOAD_SOURCE': 'Téléchargement des sources...',
+          'INSTALL':         'Installation des dépendances...',
+          'PRE_BUILD':       'Téléchargement depuis S3...',
+          'BUILD':           'Compilation gcc + Docker build...',
+          'POST_BUILD':      'Push image vers ECR...',
+          'UPLOAD_ARTIFACTS':'Finalisation...'
+        };
+        setBuildStatus('building', phaseLabels[phase] || 'Build en cours...', progress);
+
+      } else if(status === 'READY'){
+        setBuildStatus('ready','✅ Firmware compilé — image ECR prête', 100);
+        buildReady = true;
+        enableLaunchButton();
+        btn.disabled = false;
+        btn.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          ✅ Recompiler
+        `;
+        showToast('✅ Firmware prêt — tu peux lancer les tests','success');
+        return;
+
+      } else if(status === 'FAILED'){
+        setBuildStatus('failed','❌ Compilation échouée — vérifie les sources C', 0);
+        btn.disabled = false;
+        btn.innerHTML = `Réessayer`;
+        showToast('❌ Build échoué','error',6000);
+        return;
+      }
+
+    }catch(e){
+      console.warn('[POLL BUILD]', e.message);
+    }
+  }
+}
+
+// ── Helpers statut build
+function setBuildStatus(type, message, progress){
+  const dot     = document.getElementById('build-dot');
+  const text    = document.getElementById('build-status-text');
+  const bar     = document.getElementById('build-progress');
+  const phase   = document.getElementById('build-phase');
+
+  text.textContent = message;
+  bar.style.width  = progress+'%';
+
+  const colors = {
+    building: 'var(--amber)',
+    ready:    'var(--green)',
+    failed:   'var(--red)'
+  };
+  dot.style.background = colors[type] || 'var(--text3)';
+  dot.style.boxShadow  = `0 0 8px ${colors[type] || 'var(--text3)'}`;
+
+  if(type === 'building'){
+    dot.style.animation = 'pulse 1s infinite';
+    text.style.color    = 'var(--amber)';
+  } else {
+    dot.style.animation = 'none';
+    text.style.color    = colors[type];
+  }
+}
+
+function enableLaunchButton(){
+  const btn = document.getElementById('btn-launch-tests');
+  btn.disabled       = false;
+  btn.style.opacity  = '1';
+  btn.style.cursor   = 'pointer';
+}
+
+// ══════════════════════════════════════════════
+// LANCER TOUS LES TESTS
+// ══════════════════════════════════════════════
+function launchAllTests(){
+  if(!buildReady && !DEMO){
+    showToast('⚠️ Compile d\'abord le firmware','error'); return;
+  }
+  if(scenarios.length === 0){
+    showToast('⚠️ Aucun scénario disponible','error'); return;
+  }
+  openBench(0);
 }
 function clearLog(){ document.getElementById('bench-log-body').innerHTML=''; }
 </script>
