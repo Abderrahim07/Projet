@@ -931,36 +931,29 @@ function refreshScenarioListS3(){
 
 // ── Load test file CSV (preview)
 function loadTestFile(input){
-  const file = input.files[0];
-  if(!file) return;
-
-  // Afficher le nom du fichier
-  const nameEl = document.getElementById('fname-tests');
-  const itemEl = document.getElementById('file-tests');
-  if(nameEl) nameEl.textContent = file.name;
-  if(itemEl) itemEl.style.display = 'flex';
-
-  // Lire le CSV localement
-  const reader = new FileReader();
-  reader.onload = e => {
-    const lines   = e.target.result.trim().split('\n');
-    const headers = lines[0].split(',').map(h => h.trim());
-    testVectors   = lines.slice(1).map(l => {
-      const vals = l.split(',');
-      return Object.fromEntries(headers.map((h, i) => [h, vals[i]?.trim()]));
-    });
-    renderTVPreview(headers, testVectors);
-    showToast(`✅ ${testVectors.length} vecteurs chargés depuis ${file.name}`, 'success');
-    refreshScenarioListS3();
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const lines=e.target.result.trim().split('\n');
+    const headers=lines[0].split(',');
+    testVectors=lines.slice(1).map(l=>{ const v=l.split(','); return Object.fromEntries(headers.map((h,i)=>[h.trim(),v[i]?.trim()])); });
+    renderTVPreview(headers,testVectors);
+    showToast(`✅ ${testVectors.length} vecteurs chargés`,'success');
   };
   reader.readAsText(file);
-
-  // Uploader dans S3 si projet actif
+  // Upload CSV dans specs/
   if(PROJECT_ID && !DEMO){
-    uploadFile({files:[file]}, 'tests');
+    (async ()=>{
+      try{
+        const ur = await fetch(API+'/projects/'+PROJECT_ID+'/upload-url?filename='+encodeURIComponent(file.name));
+        let ud = JSON.parse(await ur.text());
+        if(ud.body && typeof ud.body==='string') ud=JSON.parse(ud.body);
+        await fetch(ud.upload_url,{method:'PUT',body:file,headers:{'Content-Type':'application/octet-stream'}});
+        console.log('[UPLOAD] '+file.name+' → S3 specs/');
+      }catch(e){ console.warn('[UPLOAD CSV]',e.message); }
+    })();
   }
 }
-
 function renderTVPreview(headers,rows){
   const preview=document.getElementById('tv-preview');
   const table=document.getElementById('tv-table');
@@ -1141,19 +1134,35 @@ function finishBench(){
   clearInterval(benchInterval);
   const sc=scenarios[activeIdx];
   const tv=testVectors[activeIdx]||testVectors[0];
-
-  // Valider selon vecteur de test
-  let passed=true;
+ 
+  // Valider selon vecteur de test (colonnes du CSV)
+  let passed = true;
   if(tv){
-    const expWarning=tv.expected_warning?.toLowerCase()==='true';
-    const actualWarning=warnLeftCount>0||warnRightCount>0;
-    passed=(expWarning===actualWarning);
+    const expLPA   = String(tv.expected_LPA_Active   ?? '1') === '1';
+    const expWarnL = String(tv.expected_Warning_Left  ?? '0').toLowerCase() === '1';
+    const expWarnR = String(tv.expected_Warning_Right ?? '0').toLowerCase() === '1';
+ 
+    // Valeurs réelles — seuil 30% des frames pour éviter les faux positifs
+    const threshold = frameCount * 0.3;
+    const actLPA    = activeFrames  > (frameCount * 0.5);
+    const actWarnL  = warnLeftCount  > threshold;
+    const actWarnR  = warnRightCount > threshold;
+ 
+    const lpaOk   = (actLPA   === expLPA);
+    const warnLOk = (actWarnL === expWarnL);
+    const warnROk = (actWarnR === expWarnR);
+ 
+    passed = lpaOk && warnLOk && warnROk;
+ 
+    addLog(`[EVAL] LPA_Active: exp=${expLPA} act=${actLPA} → ${lpaOk?'✅':'❌'}`, lpaOk?'ok':'err');
+    addLog(`[EVAL] Warning_L:  exp=${expWarnL} act=${actWarnL} (${warnLeftCount}/${frameCount}) → ${warnLOk?'✅':'❌'}`, warnLOk?'ok':'err');
+    addLog(`[EVAL] Warning_R:  exp=${expWarnR} act=${actWarnR} (${warnRightCount}/${frameCount}) → ${warnROk?'✅':'❌'}`, warnROk?'ok':'err');
   }
-
-  sc.status=passed?'pass':'fail';
-  addLog(`Done — ${frameCount} frames processed`,passed?'ok':'err');
-  addLog(`[${passed?'PASS':'FAIL'}] Résultat : ${passed?'✅ Test réussi':'❌ Test échoué'}`,passed?'ok':'err');
-
+ 
+  sc.status = passed ? 'pass' : 'fail';
+  addLog(`Done — ${frameCount} frames processed`, passed?'ok':'err');
+  addLog(`[${passed?'PASS':'FAIL'}] ${passed?'✅ Test réussi':'❌ Test échoué'}`, passed?'ok':'err');
+ 
   setHudStatus(passed?'active':'idle');
   document.getElementById('bench-status-top').textContent=passed?'PASS':'FAIL';
   document.getElementById('bench-status-top').className=passed?'tag tag-green':'tag tag-red';
@@ -1161,10 +1170,10 @@ function finishBench(){
   document.getElementById('hud-lpa-label').style.display='none';
   document.getElementById('btn-start-bench').innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> RESTART';
   document.getElementById('btn-start-bench').classList.remove('running');
-
+ 
   updateStats();
   buildNav(activeIdx);
-
+ 
   // Auto-passer au suivant
   if(activeIdx+1<scenarios.length){
     addLog(`[NEXT] Passage au scénario ${activeIdx+2}...`,'info');
