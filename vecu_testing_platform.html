@@ -765,6 +765,7 @@ let benchRunning = false;
 let benchInterval= null;
 let frameCount = 0, totalFrames = 2065;
 let warnLeftCount=0, warnRightCount=0, activeFrames=0;
+let buildReady    = false;
 
 if(DEMO){ const b=document.getElementById('env-badge'); b.textContent='DEMO'; b.style.cssText+='background:rgba(255,181,71,.08);color:var(--amber);border-color:rgba(255,181,71,.2)'; }
 
@@ -974,7 +975,57 @@ function renderVideoList(){
     }
   });
 }
-
+function renderScenarioList(){
+  const list = document.getElementById('scenario-list-s3');
+  const sub  = document.getElementById('sc-count-sub');
+  list.innerHTML = '';
+  if(scenarios.length === 0){
+    sub.textContent = 'Aucun scénario — retourne à l\'étape 2';
+    return;
+  }
+  sub.textContent = `${scenarios.length} scénario${scenarios.length>1?'s':''} prêt${scenarios.length>1?'s':''}`;
+  scenarios.forEach((sc, i) => {
+    const item = document.createElement('div');
+    item.className = 'video-list-item';
+    const statusTag = sc.status==='pass'?'<span class="tag tag-green">PASS</span>'
+      :sc.status==='fail'?'<span class="tag tag-red">FAIL</span>'
+      :sc.status==='running'?'<span class="tag tag-cyan">EN COURS</span>'
+      :'<span class="tag tag-gray">EN ATTENTE</span>';
+    const hasVector = testVectors.find(v => v.scenario === sc.name) || sc.test_vector;
+    item.innerHTML = `
+      <div class="video-thumb-mini" id="s3thumb-${i}">
+        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg4)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2">
+            <polygon points="23 7 16 12 23 17 23 7"/>
+            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+          </svg>
+        </div>
+      </div>
+      <div class="video-item-info">
+        <div class="video-item-name">SC ${i+1} — ${sc.name}</div>
+        <div class="video-item-meta">${sc.filename} · ${hasVector?'Vecteur lié ✓':'Pas de vecteur'}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        ${statusTag}
+        <button onclick="openBench(${i})"
+          style="padding:5px 12px;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);
+                 border-radius:4px;font-family:var(--mono);font-size:10px;color:var(--accent);cursor:pointer">
+          ▶ Ouvrir
+        </button>
+      </div>
+    `;
+    list.appendChild(item);
+    if(sc.file){
+      const v = document.createElement('video');
+      v.src = URL.createObjectURL(sc.file); v.muted=true; v.loop=true;
+      v.style = 'width:100%;height:100%;object-fit:cover';
+      const thumb = document.getElementById(`s3thumb-${i}`);
+      if(thumb){ thumb.innerHTML=''; thumb.appendChild(v); }
+      item.addEventListener('mouseenter',()=>v.play());
+      item.addEventListener('mouseleave',()=>v.pause());
+    }
+  });
+}
 async function openBench(idx){
   activeIdx = idx;
   const sc  = scenarios[idx];
@@ -1031,40 +1082,6 @@ async function openBench(idx){
   go(3);
 }
 // ── Screen 3 : refresh liste scénarios
-function refreshScenarioListS3(){
-  const list=document.getElementById('scenario-list-s3');
-  const sub=document.getElementById('sc-count-sub');
-  list.innerHTML='';
-  if(scenarios.length===0){ sub.textContent='Aucun scénario — retourne à l\'étape 2 pour uploader des vidéos'; return; }
-  sub.textContent=`${scenarios.length} scénario${scenarios.length>1?'s':''} prêt${scenarios.length>1?'s':''} — clique sur un pour l\'ouvrir`;
-  scenarios.forEach((sc,i)=>{
-    const item=document.createElement('div');
-    item.className='video-list-item';
-    const statusTag=sc.status==='pass'?'<span class="tag tag-green">PASS</span>':sc.status==='fail'?'<span class="tag tag-red">FAIL</span>':sc.status==='running'?'<span class="tag tag-cyan">EN COURS</span>':'<span class="tag tag-gray">EN ATTENTE</span>';
-    item.innerHTML=`
-      <div class="video-thumb-mini" id="s3thumb-${i}">
-        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg4)">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-        </div>
-      </div>
-      <div class="video-item-info">
-        <div class="video-item-name">SC ${i+1} — ${sc.name}</div>
-        <div class="video-item-meta">${sc.filename} · ${testVectors[i]?'Vecteur lié ✓':'Pas de vecteur'}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px">${statusTag}<button onclick="openBench(${i})" style="padding:5px 12px;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);border-radius:4px;font-family:var(--mono);font-size:10px;color:var(--accent);cursor:pointer;white-space:nowrap">▶ Ouvrir</button></div>
-    `;
-    list.appendChild(item);
-    if(sc.file){
-      const v=document.createElement('video');
-      v.src=URL.createObjectURL(sc.file); v.muted=true; v.loop=true;
-      v.style='width:100%;height:100%;object-fit:cover';
-      document.getElementById(`s3thumb-${i}`).innerHTML='';
-      document.getElementById(`s3thumb-${i}`).appendChild(v);
-      item.addEventListener('mouseenter',()=>v.play());
-      item.addEventListener('mouseleave',()=>v.pause());
-    }
-  });
-}
 
 // ── Load test file CSV (preview)
 function loadTestFile(input){
@@ -1217,24 +1234,6 @@ function launchAllTests(){
 // ══════════════════════════
 // BENCH
 // ══════════════════════════
-
-  // Remplir le select
-  const sel=document.getElementById('bench-video-select');
-  sel.innerHTML=scenarios.map((s,i)=>`<option value="${i}" ${i===idx?'selected':''}>${s.filename}</option>`).join('');
-
-  // Reset métriques
-  resetBenchMetrics();
-  clearLog();
-  addLog(`[INIT] Scénario chargé : ${sc.name}`,'info');
-  addLog(`[VIDEO] Source : ${sc.filename}`,'info');
-  if(testVectors[idx]) addLog(`[TEST] Vecteur associé : ${JSON.stringify(testVectors[idx])}`,'info');
-  else addLog('[TEST] Aucun vecteur de test associé à ce scénario','');
-
-  // Nav
-  buildNav(idx);
-  updateStats();
-  go(3);
-
 function switchBenchVideo(){
   const idx=parseInt(document.getElementById('bench-video-select').value);
   if(benchRunning) stopBench();
@@ -1534,7 +1533,6 @@ async function uploadMultipleFiles(input, type){
 // ══════════════════════════════════════════════
 // COMPILER LE FIRMWARE
 // ══════════════════════════════════════════════
-let buildReady = false;
 
 async function compileFirmware(){
   if(!PROJECT_ID){ showToast('⚠️ Crée d\'abord un projet','error'); return; }
