@@ -1154,7 +1154,7 @@ async function startBenchECS(){
 // Polling résultats S3
 async function pollResults(scenarioName, runId){
   addLog('[POLL] Attente des résultats ECS...','info');
-  const maxAttempts = 30; // 30 x 5s = 2.5 min max
+  const maxAttempts = 60; // 30 x 5s = 2.5 min max
 
   for(let i=0; i<maxAttempts; i++){
     await sleep(5000);
