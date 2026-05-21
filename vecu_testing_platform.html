@@ -1115,48 +1115,61 @@ async function startBenchECS(){
            || testVectors[0]
            || {};
 
-  addLog(`[ECS] Lancement RunTask — scénario : ${sc.name}`,'info');
-  addLog(`[ECS] Paramètres : speed=${tv.speed||54} lpa=${tv.lpa_ct||1}`,'info');
+  addLog(`[ECS] Lancement RunTask — scénario : ${sc.name}`, 'info');
+  addLog(`[ECS] Paramètres : speed=${tv.speed||54} lpa=${tv.lpa_ct||1} turn=${tv.turn_signal||0}`, 'info');
 
   try{
     const resp = await fetch(`${API}/projects/${PROJECT_ID}/run`, {
       method:  'POST',
       headers: {'Content-Type': 'application/json'},
-      body:    JSON.stringify({
+      body: JSON.stringify({
         scenario_file: sc.filename,
         scenario_name: sc.name,
-        scenario_s3key:sc.s3key,
-        speed:         tv.speed       || '54',
-        lpa_ct:        tv.lpa_ct      || '1',
-        turn_signal:   tv.turn_signal || '0',
-        expected_LPA_Active:    tv.expected_LPA_Active    || '1',
-        expected_Warning_Left:  tv.expected_Warning_Left  || '0',
-        expected_Warning_Right: tv.expected_Warning_Right || '0'
+        scenario_s3key: sc.s3key,
+        speed:         String(tv.speed        || '54'),
+        lpa_ct:        String(tv.lpa_ct       || '1'),
+        turn_signal:   String(tv.turn_signal  || '0'),
+        expected_LPA_Active:    String(tv.expected_LPA_Active    || '1'),
+        expected_Warning_Left:  String(tv.expected_Warning_Left  || '0'),
+        expected_Warning_Right: String(tv.expected_Warning_Right || '0')
       })
     });
+
+    if(!resp.ok){
+      const errText = await resp.text();
+      addLog(`[ERROR] /run ${resp.status} — vérifier CloudWatch`, 'err');
+      addLog(`[ERROR] ${errText.slice(0,120)}`, 'err');
+      return;
+    }
 
     let data = JSON.parse(await resp.text());
     if(data.body && typeof data.body === 'string') data = JSON.parse(data.body);
 
-    addLog(`[ECS] Task ARN : ${data.task_arn?.split('/').pop()}`,'info');
-    addLog(`[ECS] IP publique : ${data.public_ip}`,'info');
+    if(!data.run_id || data.run_id === 'undefined'){
+      addLog('[ERROR] run_id manquant — Lambda a planté', 'err');
+      addLog(`[DEBUG] Réponse: ${JSON.stringify(data).slice(0,150)}`, 'err');
+      return;
+    }
 
-    // Polling des résultats toutes les 5s
+    addLog(`[ECS] ✅ Task lancée — ${data.task_arn?.split('/').pop() || 'N/A'}`, 'info');
+    addLog(`[ECS] Run ID : ${data.run_id}`, 'info');
+    addLog(`[S3] Résultats → projects/${PROJECT_ID}/results/${data.run_id}/`, 'info');
+
     pollResults(sc.name, data.run_id);
 
   }catch(e){
-    addLog(`[ERROR] ${e.message}`,'err');
-    sc.status = 'fail';
+    addLog(`[ERROR] startBenchECS: ${e.message}`, 'err');
+    scenarios[activeIdx].status = 'fail';
     updateStats();
   }
 }
 
 // Polling résultats S3
 async function pollResults(scenarioName, runId){
-  addLog('[POLL] Attente des résultats ECS...','info');
-  const maxAttempts = 60; // 30 x 5s = 2.5 min max
+  addLog('[POLL] Attente des résultats ECS...', 'info');
+  const maxAttempts = 60; // 60 × 5s = 5 min
 
-  for(let i=0; i<maxAttempts; i++){
+  for(let i = 0; i < maxAttempts; i++){
     await sleep(5000);
     try{
       const resp = await fetch(
@@ -1167,35 +1180,72 @@ async function pollResults(scenarioName, runId){
 
       if(data.status === 'DONE'){
         const sc     = scenarios[activeIdx];
-        const passed = data.result?.status === 'PASS';
+        const result = data.result || {};
+        const passed = result.status === 'PASS';
         sc.status    = passed ? 'pass' : 'fail';
 
-        addLog(`[RESULT] ${passed?'✅ PASS':'❌ FAIL'} — ${scenarioName}`, passed?'ok':'err');
-        addLog(`[RESULT] Frames: ${data.result?.total_frames} | Warn_L: ${data.result?.warn_left} | Warn_R: ${data.result?.warn_right}`,'');
+        // ── Afficher les vrais signaux firmware
+        const frames = result.frames_sample || result.frames || [];
+        if(frames.length > 0){
+          displayRealSignals(frames[frames.length - 1]);
+        }
+
+        // ── Métriques réelles
+        document.getElementById('rm-frames').textContent = result.total_frames  || 0;
+        document.getElementById('rm-wl').textContent     = result.warn_left     || 0;
+        document.getElementById('rm-wr').textContent     = result.warn_right    || 0;
+        document.getElementById('rm-af').textContent     = result.active_frames || 0;
+        document.getElementById('rm-status').textContent = passed ? 'PASS' : 'FAIL';
+        document.getElementById('rm-lpa').textContent    = result.actual?.lpa_active ? 'ON' : 'OFF';
+        document.getElementById('rm-lpa').className      = `metric-box-val ${result.actual?.lpa_active ? 'on' : 'off'}`;
+
+        // ── Badge résultat
+        document.getElementById('bench-status-top').textContent = passed ? 'PASS' : 'FAIL';
+        document.getElementById('bench-status-top').className   = passed ? 'tag tag-green' : 'tag tag-red';
+        setHudStatus(passed ? 'active' : 'idle');
+
+        // ── Logs résultat
+        addLog(`[RESULT] ${passed ? '✅ PASS' : '❌ FAIL'} — ${scenarioName}`, passed ? 'ok' : 'err');
+        addLog(`[RESULT] Frames: ${result.total_frames} | Active: ${result.active_frames} | Warn_L: ${result.warn_left} | Warn_R: ${result.warn_right}`, '');
+        addLog(`[RESULT] Conf moy: ${result.avg_confidence}% | Sys_State: 0x0${frames[frames.length-1]?.cause||0}`, 'ok');
+        addLog(`[S3] ✅ projects/${PROJECT_ID}/results/${runId}/${scenarioName}.json`, 'info');
+
+        // ── Afficher info mémoire si disponible
+        if(result.resource_report){
+          const rr = result.resource_report.estimated_resources;
+          addLog(`[MEM] Flash: ${rr?.flash_estimated_kb} KB | RAM: ${rr?.ram_total_estimated_kb} KB`, 'info');
+        }
 
         updateStats();
         buildNav(activeIdx);
 
-        // Afficher les vrais signaux dans l'interface
-        if(data.result?.frames?.length > 0){
-          displayRealSignals(data.result.frames[data.result.frames.length-1]);
-        }
-
-        // Auto-passer au suivant
-        if(activeIdx+1 < scenarios.length){
-          addLog(`[NEXT] Scénario suivant dans 3s...`,'info');
-          setTimeout(()=>openBench(activeIdx+1), 3000);
+        // ── Auto-passer au scénario suivant
+        if(activeIdx + 1 < scenarios.length){
+          addLog(`[NEXT] ⏭ Scénario suivant dans 3s — SC${activeIdx+2}`, 'info');
+          setTimeout(() => openBench(activeIdx + 1), 3000);
+        } else {
+          addLog('[DONE] ✅ Tous les scénarios terminés', 'ok');
         }
         return;
 
-      } else if(data.status === 'RUNNING'){
-        addLog(`[POLL] ${i+1}/${maxAttempts} — Container actif...`,'info');
+      } else if(data.status === 'FAILED' || data.status === 'ERROR'){
+        addLog(`[ERROR] ECS run a échoué : ${data.error || 'raison inconnue'}`, 'err');
+        scenarios[activeIdx].status = 'fail';
+        updateStats();
+        buildNav(activeIdx);
+        return;
+
+      } else {
+        addLog(`[POLL] ${i+1}/${maxAttempts} — Container actif...`, 'info');
       }
     }catch(e){
       console.warn('[POLL]', e.message);
     }
   }
-  addLog('[TIMEOUT] Pas de résultat après 2.5 min','err');
+
+  addLog('[TIMEOUT] Pas de résultat après 5 min', 'err');
+  document.getElementById('bench-status-top').textContent = 'TIMEOUT';
+  document.getElementById('bench-status-top').className   = 'tag tag-red';
 }
 
 // Afficher les vrais signaux du firmware
@@ -1254,97 +1304,60 @@ function toggleBenchRun(){
   if(benchRunning){
     stopBench();
   } else {
+    startVideoOnly();   // joue la vidéo sans simulation
     if(buildReady && !DEMO){
-      // Build OK → lancer vraiment sur ECS
-      startBench();          // joue la vidéo localement
-      startBenchECS();       // lance ECS en parallèle
+      startBenchECS();  // lance ECS en parallèle
     } else {
-      // Pas encore compilé → simulation locale
-      startBench();
+      addLog('[WARN] Firmware non compilé — mode visualisation seule','');
     }
   }
 }
 
-function startBench(){
-  benchRunning=true;
-  const sc=scenarios[activeIdx];
-  sc.status='running';
+function startVideoOnly(){
+  benchRunning = true;
+  const sc = scenarios[activeIdx];
+  sc.status = 'running';
 
-  const btn=document.getElementById('btn-start-bench');
-  btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> STOP';
+  const btn = document.getElementById('btn-start-bench');
+  btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> STOP';
   btn.classList.add('running');
 
-  // HUD
   setHudStatus('running');
-  document.getElementById('bench-status-top').textContent='RUNNING';
-  document.getElementById('bench-status-top').className='tag tag-cyan';
-  document.getElementById('rm-status').textContent='RUN';
-  document.getElementById('hud-lpa-label').style.display='block';
+  document.getElementById('bench-status-top').textContent = 'RUNNING';
+  document.getElementById('bench-status-top').className   = 'tag tag-cyan';
+  document.getElementById('rm-status').textContent        = 'RUN';
+  document.getElementById('hud-lpa-label').style.display  = 'block';
 
-  // Lancer vidéo
-  const video=document.getElementById('bench-video');
+  const video = document.getElementById('bench-video');
+  video.loop  = false;
   video.play();
-  totalFrames=Math.round((video.duration||30)*25);
+  totalFrames = Math.round((video.duration || 30) * 30);
 
-  addLog(`[START] Simulation démarrée — ${sc.name}`,'info');
-  addLog(`[ECS] Container actif — traitement en temps réel`,'info');
+  addLog(`[START] Vidéo lancée — ${sc.name}`, 'info');
+  addLog(`[ECS] Traitement firmware en cours sur AWS...`, 'info');
 
-  // Interval simulation
-  let t=0;
-  benchInterval=setInterval(()=>{
-    if(!benchRunning){ clearInterval(benchInterval); return; }
-    t+=25;
-    frameCount+=25;
-    const pct=Math.min(100,Math.round((video.currentTime/(video.duration||30))*100));
-    const conf=Math.min(100,85+Math.round(Math.random()*15));
-    const speed=parseInt(document.getElementById('bench-speed-slider').value);
-    const lateral=(Math.random()-0.5)*0.6;
-    const torque=-(lateral*8).toFixed(2);
-    const warning=Math.abs(lateral)>0.2;
+  // Mise à jour du compteur de frames depuis la vidéo réelle
+  video.ontimeupdate = () => {
+    frameCount = Math.round(video.currentTime * 30);
+    const speed = document.getElementById('bench-speed-slider').value;
+    document.getElementById('hud-frame').textContent   = `FRAME: ${frameCount}`;
+    document.getElementById('bench-frame').textContent = `FRAME ${frameCount}/${totalFrames}`;
+    document.getElementById('bm-speed').textContent    = speed;
+  };
 
-    // Update HUD
-    document.getElementById('hud-frame').textContent=`FRAME: ${frameCount}`;
-    document.getElementById('hud-conf').textContent=`CONF: ${conf}%`;
-
-    // Métriques
-    document.getElementById('bm-speed').textContent=speed;
-    document.getElementById('bm-conf').textContent=conf;
-    document.getElementById('conf-fill').style.width=conf+'%';
-    document.getElementById('conf-pct').textContent=conf+'%';
-    document.getElementById('bench-frame').textContent=`FRAME ${frameCount}/${totalFrames}`;
-
-    // Signaux output
-    document.getElementById('os-wl').textContent=warning&&lateral>0?'1':'0';
-    document.getElementById('os-wr').textContent=warning&&lateral<0?'1':'0';
-    document.getElementById('os-state').textContent='0x01';
-    document.getElementById('offset-val').textContent=(lateral*100).toFixed(1)+'%';
-    document.getElementById('offset-indicator').style.left=`calc(${50+lateral*40}% - 4px)`;
-
-    // Warnings
-    if(warning&&lateral>0){ warnLeftCount++; document.getElementById('warn-left').classList.add('active'); }
-    else document.getElementById('warn-left').classList.remove('active');
-    if(warning&&lateral<0){ warnRightCount++; document.getElementById('warn-right').classList.add('active'); }
-    else document.getElementById('warn-right').classList.remove('active');
-
-    activeFrames++;
-    document.getElementById('rm-frames').textContent=frameCount;
-    document.getElementById('rm-wl').textContent=warnLeftCount;
-    document.getElementById('rm-wr').textContent=warnRightCount;
-    document.getElementById('rm-af').textContent=activeFrames;
-
-    // Log toutes les 500 frames
-    if(frameCount%500===0) addLog(`Frame ${frameCount}/${totalFrames} | ACTIVE | conf=${conf}.0`,'ok');
-
-    // Fin vidéo
-    if(video.ended||frameCount>=totalFrames){
-      finishBench();
-    }
-  },1000/25);
-
-  // Aussi écouter la fin naturelle de la vidéo
-  video.onended=()=>{ if(benchRunning) finishBench(); };
+  video.onended = () => {
+    benchRunning = false;
+    clearInterval(benchInterval);
+    const btn2 = document.getElementById('btn-start-bench');
+    btn2.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> RESTART';
+    btn2.classList.remove('running');
+    document.getElementById('hud-lpa-label').style.display = 'none';
+    addLog('[VIDEO] Fin de la vidéo — en attente résultats ECS...', 'info');
+    document.getElementById('bench-status-top').textContent = 'WAIT ECS';
+    document.getElementById('bench-status-top').className   = 'tag tag-amber';
+    setHudStatus('idle');
+  };
 }
-
 function stopBench(){
   benchRunning=false;
   clearInterval(benchInterval);
@@ -1360,55 +1373,10 @@ function stopBench(){
 }
 
 function finishBench(){
-  benchRunning=false;
+  // Cette fonction n'est plus utilisée pour le PASS/FAIL
+  // Le résultat vient exclusivement de pollResults() via ECS
+  benchRunning = false;
   clearInterval(benchInterval);
-  const sc=scenarios[activeIdx];
-  const tv=testVectors[activeIdx]||testVectors[0];
- 
-  // Valider selon vecteur de test (colonnes du CSV)
-  let passed = true;
-  if(tv){
-    const expLPA   = String(tv.expected_LPA_Active   ?? '1') === '1';
-    const expWarnL = String(tv.expected_Warning_Left  ?? '0').toLowerCase() === '1';
-    const expWarnR = String(tv.expected_Warning_Right ?? '0').toLowerCase() === '1';
- 
-    // Valeurs réelles — seuil 30% des frames pour éviter les faux positifs
-    const threshold = frameCount * 0.3;
-    const actLPA    = activeFrames  > (frameCount * 0.5);
-    const actWarnL  = warnLeftCount  > threshold;
-    const actWarnR  = warnRightCount > threshold;
- 
-    const lpaOk   = (actLPA   === expLPA);
-    const warnLOk = (actWarnL === expWarnL);
-    const warnROk = (actWarnR === expWarnR);
- 
-    passed = lpaOk && warnLOk && warnROk;
- 
-    addLog(`[EVAL] LPA_Active: exp=${expLPA} act=${actLPA} → ${lpaOk?'✅':'❌'}`, lpaOk?'ok':'err');
-    addLog(`[EVAL] Warning_L:  exp=${expWarnL} act=${actWarnL} (${warnLeftCount}/${frameCount}) → ${warnLOk?'✅':'❌'}`, warnLOk?'ok':'err');
-    addLog(`[EVAL] Warning_R:  exp=${expWarnR} act=${actWarnR} (${warnRightCount}/${frameCount}) → ${warnROk?'✅':'❌'}`, warnROk?'ok':'err');
-  }
- 
-  sc.status = passed ? 'pass' : 'fail';
-  addLog(`Done — ${frameCount} frames processed`, passed?'ok':'err');
-  addLog(`[${passed?'PASS':'FAIL'}] ${passed?'✅ Test réussi':'❌ Test échoué'}`, passed?'ok':'err');
- 
-  setHudStatus(passed?'active':'idle');
-  document.getElementById('bench-status-top').textContent=passed?'PASS':'FAIL';
-  document.getElementById('bench-status-top').className=passed?'tag tag-green':'tag tag-red';
-  document.getElementById('rm-status').textContent=passed?'DONE':'FAIL';
-  document.getElementById('hud-lpa-label').style.display='none';
-  document.getElementById('btn-start-bench').innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> RESTART';
-  document.getElementById('btn-start-bench').classList.remove('running');
- 
-  updateStats();
-  buildNav(activeIdx);
- 
-  // Auto-passer au suivant
-  if(activeIdx+1<scenarios.length){
-    addLog(`[NEXT] Passage au scénario ${activeIdx+2}...`,'info');
-    setTimeout(()=>openBench(activeIdx+1),2000);
-  }
 }
 
 function resetBenchMetrics(){
