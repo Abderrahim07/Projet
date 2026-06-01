@@ -29,10 +29,7 @@ phases:
       # 2. Récupérer la Task Definition actuelle
       - echo Recuperation Task Definition...
       - |
-        aws ecs describe-task-definition \
-          --task-definition vecu-task \
-          --query 'taskDefinition' \
-          --output json > current_task_def.json
+        aws ecs describe-task-definition --task-definition vecu-task --query 'taskDefinition' --output json > current_task_def.json
 
       # 3. Créer nouvelle révision avec le nouveau tag image
       - echo Creation nouvelle revision Task Definition...
@@ -58,10 +55,7 @@ phases:
       # 4. Enregistrer la nouvelle révision
       - echo Enregistrement nouvelle Task Definition...
       - |
-        NEW_REVISION=$(aws ecs register-task-definition \
-          --cli-input-json file://new_task_def.json \
-          --query 'taskDefinition.revision' \
-          --output text)
+        NEW_REVISION=$(aws ecs register-task-definition --cli-input-json file://new_task_def.json --query 'taskDefinition.revision' --output text)
       - echo "Nouvelle revision = $NEW_REVISION"
 
       # 5. Sauvegarder les infos pour la Lambda
