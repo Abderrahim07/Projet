@@ -507,17 +507,17 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   <!-- ═══ SCREEN 3 — Tests & Scénarios ═══ -->
   <div class="screen" id="sc2">
 
-    <!-- Choix stratégie -->
+    <!-- NIVEAU 1 : Choix principal -->
     <div class="card">
       <div class="card-head">
         <div class="card-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>Stratégie de test</div>
-        <div class="card-sub">Comment veux-tu définir tes vecteurs de test ?</div>
+        <div class="card-sub">Comment veux-tu définir tes scénarios de test ?</div>
       </div>
       <div class="strategy-grid">
-        <div class="strategy-card selected" id="str0" onclick="selectStrategy(0)">
-          <span class="strategy-icon">📂</span>
+        <div class="strategy-card" id="str0" onclick="selectStrategy(0)">
+          <span class="strategy-icon">📋</span>
           <div class="strategy-title">Mes propres tests</div>
-          <div class="strategy-desc">Upload un fichier CSV/Excel avec tes vecteurs définis manuellement — contrôle total</div>
+          <div class="strategy-desc">Importer un fichier CSV ou créer manuellement tes vecteurs de test — contrôle total</div>
         </div>
         <div class="strategy-card" id="str1" onclick="selectStrategy(1)">
           <span class="strategy-icon">🤖</span>
@@ -527,21 +527,36 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       </div>
     </div>
 
-    <!-- Upload vecteurs de test (visible si stratégie 0) -->
-    <div class="card" id="manual-tests-card">
+    <!-- NIVEAU 2 : Sous-choix "Mes propres tests" -->
+    <div class="card" id="manual-tests-card" style="display:none">
       <div class="card-head">
-        <div class="card-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Upload de tes vecteurs de test</div>
-        <div class="card-sub">Fichier CSV ou Excel — un vecteur par ligne, un scénario par colonne scenario</div>
+        <div class="card-title">📋 Mes propres tests — Comment veux-tu les définir ?</div>
+        <div class="card-sub">Choisissez le mode de saisie de vos vecteurs de test</div>
       </div>
+      <div class="strategy-grid">
+        <div class="strategy-card" id="sub-upload" onclick="selectSubMode('upload')">
+          <span class="strategy-icon">📂</span>
+          <div class="strategy-title">Importer un CSV</div>
+          <div class="strategy-desc">Charger un fichier CSV/Excel avec les vecteurs déjà définis</div>
+        </div>
+        <div class="strategy-card" id="sub-manual" onclick="selectSubMode('manual')">
+          <span class="strategy-icon">🎛</span>
+          <div class="strategy-title">Créer manuellement</div>
+          <div class="strategy-desc">Configurer les signaux d'entrée et sorties attendues directement depuis l'interface</div>
+        </div>
+      </div>
+    </div>
 
-      <div class="upload-zone" onclick="document.getElementById('input-tests').click()"
-     style="padding:20px">
-        <input type="file" id="input-tests" accept=".csv,.xlsx,.xls"
-               style="display:none"
-               onchange="loadTestFile(this)"/>
+    <!-- NIVEAU 3a : Upload CSV -->
+    <div class="card" id="sub-upload-card" style="display:none">
+      <div class="card-head">
+        <div class="card-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Import de vecteurs de test</div>
+        <div class="card-sub">Fichier CSV ou Excel — un vecteur par ligne</div>
+      </div>
+      <div class="upload-zone" onclick="document.getElementById('input-tests').click()" style="padding:20px">
+        <input type="file" id="input-tests" accept=".csv,.xlsx,.xls" style="display:none" onchange="loadTestFile(this)"/>
         <div class="upload-icon" style="background:rgba(0,229,160,.08)">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-               stroke="var(--green)" stroke-width="2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
             <polyline points="14 2 14 8 20 8"/>
           </svg>
@@ -549,37 +564,138 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
         <p>Fichier de vecteurs de test</p>
         <span>.csv · .xlsx</span>
       </div>
-      
-      <!-- Élément manquant — affiche le fichier chargé -->
       <div class="file-item" id="file-tests" style="display:none">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-             stroke="var(--green)" stroke-width="2">
-          <polyline points="20 6 9 17 4 12"/>
-        </svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
         <span id="fname-tests">—</span>
         <span class="file-status">✓ CHARGÉ</span>
       </div>
-
-      <!-- Format -->
       <div style="margin-top:12px;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r)">
         <div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Format CSV attendu</div>
         <div style="font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.8">
           scenario,vehicle_speed,lateral_offset,expected_torque,expected_warning<br>
           <span style="color:var(--green)">scene_nominal,110,0.0,-0.1,false</span><br>
-          <span style="color:var(--amber)">scene_drift_right,110,0.3,-2.5,true</span><br>
-          <span style="color:var(--accent)">scene_drift_left,110,-0.3,2.5,true</span>
+          <span style="color:var(--amber)">scene_drift_right,110,0.3,-2.5,true</span>
         </div>
       </div>
-
-      <!-- Preview table -->
       <div id="tv-preview" style="display:none;margin-top:12px">
         <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px">Aperçu des vecteurs chargés</div>
         <div class="tv-table-wrap"><table class="tv-table" id="tv-table"><thead></thead><tbody></tbody></table></div>
       </div>
     </div>
 
-    <!-- Scénarios disponibles -->
-    <div class="card">
+    <!-- NIVEAU 3b : Création manuelle -->
+    <div class="card" id="sub-manual-card" style="display:none">
+      <div class="card-head">
+        <div class="card-title">🎛 Créer un vecteur de test manuellement</div>
+        <div class="card-sub">Définissez les paramètres d'entrée et les sorties attendues</div>
+      </div>
+
+      <!-- Nom du scénario -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Identifiant</div>
+        <input type="text" id="man-sc-name"
+          style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);
+                 padding:10px 14px;color:var(--text1);font-size:12px;font-family:var(--mono);outline:none"
+          placeholder="ex: scene_nominal_custom"
+          oninput="manUpdateResume()"/>
+      </div>
+
+      <!-- Sélection du scénario vidéo associé -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Scénario vidéo associé</div>
+        <select id="man-sc-video"
+          style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);
+                 padding:10px 14px;color:var(--text1);font-size:12px;font-family:var(--mono);outline:none">
+          <option value="">— Sélectionner une vidéo uploadée —</option>
+        </select>
+      </div>
+
+      <!-- Signaux dynamiques (depuis fichier I/O) -->
+      <div id="man-dynamic-wrap" style="display:none;margin-bottom:16px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Signaux I/O détectés</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="man-dynamic-signals"></div>
+      </div>
+
+      <!-- Paramètres standards -->
+      <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:10px">Paramètres d'entrée</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+
+        <!-- Speed -->
+        <div style="grid-column:1/-1">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <span style="font-size:11px;font-weight:600;color:var(--text2)">Vitesse véhicule</span>
+            <span style="font-size:11px;font-weight:700;color:var(--accent);font-family:var(--mono)" id="man-speed-lbl">54 km/h</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:9px;color:var(--text3)">0</span>
+            <input type="range" style="flex:1;height:3px;background:rgba(255,255,255,.1);border-radius:10px;outline:none;-webkit-appearance:none;cursor:pointer"
+              id="man-speed" min="0" max="200" value="54" oninput="manUpdateSpeed(this.value)"/>
+            <span style="font-size:9px;color:var(--text3)">200</span>
+          </div>
+        </div>
+
+        <!-- LPA -->
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px">LPA Activé</div>
+          <div style="display:flex;gap:6px">
+            <button class="scm-toggle on" id="man-lpa-on"  onclick="manSetLPA(1)" style="flex:1;padding:7px;border-radius:7px;border:1px solid rgba(34,197,94,.4);background:rgba(34,197,94,.15);color:#22c55e;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--mono)">✓ ON</button>
+            <button class="scm-toggle"    id="man-lpa-off" onclick="manSetLPA(0)" style="flex:1;padding:7px;border-radius:7px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--text3);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--mono)">✗ OFF</button>
+          </div>
+        </div>
+
+        <!-- Turn signal -->
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px">Clignotant</div>
+          <div style="display:flex;gap:6px">
+            <button id="man-turn-0" onclick="manSetTurn(0)" style="flex:1;padding:7px;border-radius:7px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.1);color:#ef4444;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--mono)">✗ OFF</button>
+            <button id="man-turn-1" onclick="manSetTurn(1)" style="flex:1;padding:7px;border-radius:7px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--text3);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--mono)">← G</button>
+            <button id="man-turn-2" onclick="manSetTurn(2)" style="flex:1;padding:7px;border-radius:7px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--text3);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--mono)">D →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sorties attendues -->
+      <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:10px">Sorties attendues (verdict)</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:9.5px;color:var(--text3);margin-bottom:5px">LPA_Active</div>
+          <div style="display:flex;gap:4px">
+            <button id="man-e-lpa-1" onclick="manSetExp('lpa',1)" style="flex:1;padding:4px;border-radius:5px;border:1px solid #22c55e;background:rgba(34,197,94,.2);color:#22c55e;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--mono)">1</button>
+            <button id="man-e-lpa-0" onclick="manSetExp('lpa',0)" style="flex:1;padding:4px;border-radius:5px;border:1px solid rgba(255,255,255,.08);background:none;color:var(--text3);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--mono)">0</button>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:9.5px;color:var(--text3);margin-bottom:5px">Warning_Left</div>
+          <div style="display:flex;gap:4px">
+            <button id="man-e-wl-1" onclick="manSetExp('wl',1)" style="flex:1;padding:4px;border-radius:5px;border:1px solid rgba(255,255,255,.08);background:none;color:var(--text3);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--mono)">1</button>
+            <button id="man-e-wl-0" onclick="manSetExp('wl',0)" style="flex:1;padding:4px;border-radius:5px;border:1px solid #ef4444;background:rgba(239,68,68,.15);color:#ef4444;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--mono)">0</button>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:9.5px;color:var(--text3);margin-bottom:5px">Warning_Right</div>
+          <div style="display:flex;gap:4px">
+            <button id="man-e-wr-1" onclick="manSetExp('wr',1)" style="flex:1;padding:4px;border-radius:5px;border:1px solid rgba(255,255,255,.08);background:none;color:var(--text3);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--mono)">1</button>
+            <button id="man-e-wr-0" onclick="manSetExp('wr',0)" style="flex:1;padding:4px;border-radius:5px;border:1px solid #ef4444;background:rgba(239,68,68,.15);color:#ef4444;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--mono)">0</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Résumé -->
+      <div id="man-resume" style="display:none;background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);border-radius:9px;padding:12px;margin-bottom:14px">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:8px">Vecteur de test généré</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px" id="man-resume-grid"></div>
+      </div>
+
+      <!-- Bouton Passer au test -->
+      <button onclick="manConfirmAndLaunch()"
+        style="width:100%;padding:12px;background:var(--accent);border:none;border-radius:var(--r);
+               color:#000;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--mono)">
+        ▶ Confirmer et passer au test
+      </button>
+    </div>
+
+    <!-- Scénarios disponibles (visible si upload CSV ou stratégie IA) -->
+    <div class="card" id="scenarios-list-card" style="display:none">
       <div class="card-head">
         <div class="card-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>Scénarios à tester</div>
         <div class="card-sub" id="sc-count-sub">Aucun scénario — retourne à l'étape 2 pour uploader des vidéos</div>
@@ -1370,7 +1486,176 @@ function selectStrategy(n){
   strategy=n;
   document.getElementById('str0').classList.toggle('selected',n===0);
   document.getElementById('str1').classList.toggle('selected',n===1);
-  document.getElementById('manual-tests-card').style.display=n===0?'block':'none';
+  // Mes propres tests
+  document.getElementById('manual-tests-card').style.display  = n===0?'block':'none';
+  // IA → afficher directement la liste scénarios
+  document.getElementById('scenarios-list-card').style.display= n===1?'block':'none';
+  // Reset sous-mode
+  if(n===0){
+    document.getElementById('sub-upload-card').style.display  = 'none';
+    document.getElementById('sub-manual-card').style.display  = 'none';
+    document.getElementById('scenarios-list-card').style.display='none';
+    document.getElementById('sub-upload').classList.remove('selected');
+    document.getElementById('sub-manual').classList.remove('selected');
+    // Peupler le select vidéo
+    manPopulateVideoSelect();
+  }
+}
+
+function selectSubMode(mode){
+  document.getElementById('sub-upload').classList.toggle('selected', mode==='upload');
+  document.getElementById('sub-manual').classList.toggle('selected', mode==='manual');
+  document.getElementById('sub-upload-card').style.display  = mode==='upload'?'block':'none';
+  document.getElementById('sub-manual-card').style.display  = mode==='manual'?'block':'none';
+  // La liste scénarios n'apparaît que pour upload
+  document.getElementById('scenarios-list-card').style.display = mode==='upload'?'block':'none';
+  if(mode==='manual'){
+    manPopulateVideoSelect();
+    manBuildDynamicSignals();
+    manUpdateResume();
+  }
+}
+
+// ── Manual mode JS
+let manLPA=1, manTurn=0, manExpLPA=1, manExpWL=0, manExpWR=0;
+let manDynValues={};
+
+function manPopulateVideoSelect(){
+  const sel=document.getElementById('man-sc-video');
+  if(!sel) return;
+  sel.innerHTML='<option value="">— Sélectionner une vidéo uploadée —</option>';
+  scenarios.forEach((sc,i)=>{
+    const opt=document.createElement('option');
+    opt.value=i; opt.textContent=`SC${i+1} — ${sc.name}`;
+    sel.appendChild(opt);
+  });
+}
+
+function manBuildDynamicSignals(){
+  const knownKeys=new Set(['scenario','speed','vehicle_speed','lpa_ct','turn_signal',
+    'expected_LPA_Active','expected_Warning_Left','expected_Warning_Right',
+    'expected_torque','expected_warning','lateral_offset']);
+  const extraKeys=[];
+  testVectors.forEach(v=>{
+    Object.keys(v).forEach(k=>{ if(!knownKeys.has(k)&&!extraKeys.includes(k)) extraKeys.push(k); });
+  });
+  const wrap=document.getElementById('man-dynamic-signals');
+  const wrapParent=document.getElementById('man-dynamic-wrap');
+  if(extraKeys.length===0){ wrapParent.style.display='none'; return; }
+  wrapParent.style.display='block';
+  manDynValues={};
+  wrap.innerHTML=extraKeys.map(key=>{
+    manDynValues[key]='';
+    return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px 12px">
+      <div style="font-size:10px;font-weight:700;color:var(--text2);font-family:var(--mono);margin-bottom:6px">${key}</div>
+      <input style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:6px 10px;color:var(--text1);font-size:11px;outline:none;font-family:var(--mono)"
+        type="text" placeholder="valeur..."
+        oninput="manDynValues['${key}']=this.value;manUpdateResume()"/>
+    </div>`;
+  }).join('');
+}
+
+function manUpdateSpeed(v){
+  document.getElementById('man-speed-lbl').textContent=v+' km/h';
+  manUpdateResume();
+}
+
+function manSetLPA(v){
+  manLPA=v;
+  const on=document.getElementById('man-lpa-on');
+  const off=document.getElementById('man-lpa-off');
+  if(on){on.style.background=v===1?'rgba(34,197,94,.15)':'rgba(255,255,255,.04)';on.style.borderColor=v===1?'rgba(34,197,94,.4)':'rgba(255,255,255,.1)';on.style.color=v===1?'#22c55e':'var(--text3)';}
+  if(off){off.style.background=v===0?'rgba(239,68,68,.1)':'rgba(255,255,255,.04)';off.style.borderColor=v===0?'rgba(239,68,68,.35)':'rgba(255,255,255,.1)';off.style.color=v===0?'#ef4444':'var(--text3)';}
+  manUpdateResume();
+}
+
+function manSetTurn(v){
+  manTurn=v;
+  [0,1,2].forEach(i=>{
+    const btn=document.getElementById('man-turn-'+i);
+    if(!btn) return;
+    const active=i===v;
+    btn.style.background=active?(v===0?'rgba(239,68,68,.1)':'rgba(0,212,255,.1)'):'rgba(255,255,255,.04)';
+    btn.style.borderColor=active?(v===0?'rgba(239,68,68,.35)':'rgba(0,212,255,.3)'):'rgba(255,255,255,.1)';
+    btn.style.color=active?(v===0?'#ef4444':'var(--accent)'):'var(--text3)';
+  });
+  manUpdateResume();
+}
+
+function manSetExp(key,v){
+  if(key==='lpa'){manExpLPA=v;
+    document.getElementById('man-e-lpa-1').style.background=v===1?'rgba(34,197,94,.2)':'none';
+    document.getElementById('man-e-lpa-1').style.borderColor=v===1?'#22c55e':'rgba(255,255,255,.08)';
+    document.getElementById('man-e-lpa-1').style.color=v===1?'#22c55e':'var(--text3)';
+    document.getElementById('man-e-lpa-0').style.background=v===0?'rgba(239,68,68,.15)':'none';
+    document.getElementById('man-e-lpa-0').style.borderColor=v===0?'#ef4444':'rgba(255,255,255,.08)';
+    document.getElementById('man-e-lpa-0').style.color=v===0?'#ef4444':'var(--text3)';
+  } else if(key==='wl'){manExpWL=v;
+    document.getElementById('man-e-wl-1').style.background=v===1?'rgba(34,197,94,.2)':'none';
+    document.getElementById('man-e-wl-1').style.borderColor=v===1?'#22c55e':'rgba(255,255,255,.08)';
+    document.getElementById('man-e-wl-1').style.color=v===1?'#22c55e':'var(--text3)';
+    document.getElementById('man-e-wl-0').style.background=v===0?'rgba(239,68,68,.15)':'none';
+    document.getElementById('man-e-wl-0').style.borderColor=v===0?'#ef4444':'rgba(255,255,255,.08)';
+    document.getElementById('man-e-wl-0').style.color=v===0?'#ef4444':'var(--text3)';
+  } else {manExpWR=v;
+    document.getElementById('man-e-wr-1').style.background=v===1?'rgba(34,197,94,.2)':'none';
+    document.getElementById('man-e-wr-1').style.borderColor=v===1?'#22c55e':'rgba(255,255,255,.08)';
+    document.getElementById('man-e-wr-1').style.color=v===1?'#22c55e':'var(--text3)';
+    document.getElementById('man-e-wr-0').style.background=v===0?'rgba(239,68,68,.15)':'none';
+    document.getElementById('man-e-wr-0').style.borderColor=v===0?'#ef4444':'rgba(255,255,255,.08)';
+    document.getElementById('man-e-wr-0').style.color=v===0?'#ef4444':'var(--text3)';
+  }
+  manUpdateResume();
+}
+
+function manUpdateResume(){
+  const speed=document.getElementById('man-speed')?.value||54;
+  const resume=document.getElementById('man-resume');
+  const grid=document.getElementById('man-resume-grid');
+  if(!resume) return;
+  resume.style.display='block';
+  const items=[
+    {k:'speed',v:speed+' km/h'},{k:'lpa_ct',v:manLPA===1?'ON':'OFF'},
+    {k:'turn',v:manTurn===0?'OFF':manTurn===1?'← G':'D →'},
+    {k:'exp_LPA',v:manExpLPA},{k:'exp_WL',v:manExpWL},{k:'exp_WR',v:manExpWR},
+    ...Object.entries(manDynValues).map(([k,v])=>({k,v:v||'—'}))
+  ];
+  grid.innerHTML=items.map(i=>`
+    <div style="background:rgba(255,255,255,.04);border-radius:6px;padding:7px;text-align:center">
+      <div style="font-size:9px;color:var(--text3);margin-bottom:3px">${i.k}</div>
+      <div style="font-size:11px;font-weight:700;color:var(--accent);font-family:var(--mono)">${i.v}</div>
+    </div>`).join('');
+}
+
+function manConfirmAndLaunch(){
+  const nameInput=document.getElementById('man-sc-name');
+  const videoSel=document.getElementById('man-sc-video');
+  const speed=document.getElementById('man-speed')?.value||'54';
+  const scName=nameInput?.value||'custom_scenario';
+  const videoIdx=parseInt(videoSel?.value??'-1');
+
+  // Créer le vecteur de test
+  const tv={
+    scenario:scName, speed, vehicle_speed:speed,
+    lpa_ct:String(manLPA), turn_signal:String(manTurn),
+    expected_LPA_Active:String(manExpLPA),
+    expected_Warning_Left:String(manExpWL),
+    expected_Warning_Right:String(manExpWR),
+    ...manDynValues
+  };
+
+  if(videoIdx>=0){
+    // Associer au scénario vidéo existant
+    const sc=scenarios[videoIdx];
+    sc.test_vector=tv;
+    testVectors=testVectors.filter(v=>v.scenario!==sc.name);
+    tv.scenario=sc.name;
+    testVectors.push(tv);
+    showToast(`✅ Vecteur créé pour ${sc.name}`,'success');
+    openBench(videoIdx);
+  } else {
+    showToast('⚠️ Sélectionnez une vidéo scénario','error');
+  }
 }
 
 // ── Launch all
