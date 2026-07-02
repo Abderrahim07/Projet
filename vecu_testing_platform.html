@@ -1531,28 +1531,130 @@ function manPopulateVideoSelect(){
   });
 }
 
-function manBuildDynamicSignals(){
-  const knownKeys=new Set(['scenario','speed','vehicle_speed','lpa_ct','turn_signal',
-    'expected_LPA_Active','expected_Warning_Left','expected_Warning_Right',
-    'expected_torque','expected_warning','lateral_offset']);
-  const extraKeys=[];
-  testVectors.forEach(v=>{
-    Object.keys(v).forEach(k=>{ if(!knownKeys.has(k)&&!extraKeys.includes(k)) extraKeys.push(k); });
-  });
-  const wrap=document.getElementById('man-dynamic-signals');
-  const wrapParent=document.getElementById('man-dynamic-wrap');
-  if(extraKeys.length===0){ wrapParent.style.display='none'; return; }
-  wrapParent.style.display='block';
-  manDynValues={};
-  wrap.innerHTML=extraKeys.map(key=>{
-    manDynValues[key]='';
-    return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px 12px">
-      <div style="font-size:10px;font-weight:700;color:var(--text2);font-family:var(--mono);margin-bottom:6px">${key}</div>
-      <input style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:6px 10px;color:var(--text1);font-size:11px;outline:none;font-family:var(--mono)"
-        type="text" placeholder="valeur..."
-        oninput="manDynValues['${key}']=this.value;manUpdateResume()"/>
-    </div>`;
-  }).join('');
+async function manBuildDynamicSignals() {
+  const wrap       = document.getElementById('man-dynamic-signals');
+  const wrapParent = document.getElementById('man-dynamic-wrap');
+
+  if(!PROJECT_ID || DEMO) {
+    wrapParent.style.display = 'none';
+    return;
+  }
+
+  wrapParent.style.display = 'block';
+  wrap.innerHTML = `<div style="font-size:11px;color:var(--text2);padding:8px">
+    ⏳ Chargement des signaux...</div>`;
+
+  try {
+    // Appel à la Lambda vecu-parse-arxml via API Gateway
+    const resp = await fetch(`${API}/projects/${PROJECT_ID}/signals`);
+    let data   = JSON.parse(await resp.text());
+    if(data.body && typeof data.body === 'string') data = JSON.parse(data.body);
+
+    const signals = data.signals || [];
+    if(signals.length === 0) {
+      wrap.innerHTML = `<div style="font-size:11px;color:var(--text3);padding:8px">
+        Aucun signal trouvé — uploadez d'abord le fichier I/O (étape 2)</div>`;
+      return;
+    }
+
+    const inputs  = signals.filter(s => s.direction === 'INPUT');
+    const outputs = signals.filter(s => s.direction === 'OUTPUT');
+    manDynValues  = {};
+
+    let html = '';
+
+    // ── ENTRÉES → contrôles interactifs
+    if(inputs.length > 0) {
+      html += `<div style="grid-column:1/-1;font-size:9px;font-weight:700;
+        color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;
+        margin-bottom:4px">SIGNAUX ENTRÉE</div>`;
+
+      inputs.forEach(sig => {
+        const min  = parseFloat(sig.min_value) || 0;
+        const max  = parseFloat(sig.max_value) || 1;
+        const unit = sig.unit || '';
+        manDynValues[sig.signal_name] = String(min);
+
+        if(sig.data_type === 'boolean' || (min===0 && max===1)) {
+          // Toggle ON/OFF
+          html += `
+            <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);
+              border-radius:8px;padding:10px 12px">
+              <div style="font-size:10px;font-weight:700;color:var(--text2);
+                font-family:var(--mono);margin-bottom:6px">${sig.signal_name}
+                <span style="font-size:9px;color:var(--text3);margin-left:4px">${sig.description||''}</span>
+              </div>
+              <div style="display:flex;gap:6px">
+                <button id="dyn-${sig.signal_name}-1" onclick="dynSet('${sig.signal_name}',1)"
+                  style="flex:1;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,.1);
+                    background:rgba(255,255,255,.04);color:var(--text3);font-size:10px;
+                    font-weight:700;cursor:pointer;font-family:var(--mono)">ON</button>
+                <button id="dyn-${sig.signal_name}-0" onclick="dynSet('${sig.signal_name}',0)"
+                  style="flex:1;padding:6px;border-radius:6px;border:1px solid rgba(239,68,68,.35);
+                    background:rgba(239,68,68,.1);color:#ef4444;font-size:10px;
+                    font-weight:700;cursor:pointer;font-family:var(--mono)">OFF</button>
+              </div>
+            </div>`;
+        } else {
+          // Slider avec vraies valeurs min/max de DynamoDB
+          html += `
+            <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);
+              border-radius:8px;padding:10px 12px">
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                <span style="font-size:10px;font-weight:700;color:var(--text2);
+                  font-family:var(--mono)">${sig.signal_name}</span>
+                <span style="font-size:10px;color:var(--accent);font-family:var(--mono)"
+                  id="dyn-lbl-${sig.signal_name}">${min} ${unit}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="font-size:9px;color:var(--text3)">${min}</span>
+                <input type="range" style="flex:1;height:3px;background:rgba(255,255,255,.1);
+                  border-radius:10px;outline:none;-webkit-appearance:none;cursor:pointer"
+                  min="${min}" max="${max}" value="${min}" step="${(max-min)/100}"
+                  oninput="dynSlider('${sig.signal_name}',this.value,'${unit}')"/>
+                <span style="font-size:9px;color:var(--text3)">${max}</span>
+              </div>
+              <div style="font-size:9px;color:var(--text3);margin-top:3px">${sig.description||''}</div>
+            </div>`;
+        }
+      });
+    }
+
+    // ── SORTIES → boutons attendu 0/1
+    if(outputs.length > 0) {
+      html += `<div style="grid-column:1/-1;font-size:9px;font-weight:700;
+        color:var(--green);letter-spacing:1.5px;text-transform:uppercase;
+        margin:10px 0 4px">SORTIES ATTENDUES</div>`;
+
+      outputs.forEach(sig => {
+        manDynValues[`expected_${sig.signal_name}`] = '0';
+        html += `
+          <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);
+            border-radius:8px;padding:10px 12px;text-align:center">
+            <div style="font-size:9.5px;color:var(--text3);margin-bottom:6px;
+              font-family:var(--mono)">${sig.signal_name}</div>
+            <div style="font-size:9px;color:var(--text3);margin-bottom:6px">${sig.description||''}</div>
+            <div style="display:flex;gap:4px">
+              <button id="exp-${sig.signal_name}-1" onclick="expSet('${sig.signal_name}',1)"
+                style="flex:1;padding:5px;border-radius:5px;border:1px solid rgba(255,255,255,.08);
+                  background:none;color:var(--text3);font-size:10px;font-weight:700;
+                  cursor:pointer;font-family:var(--mono)">1</button>
+              <button id="exp-${sig.signal_name}-0" onclick="expSet('${sig.signal_name}',0)"
+                style="flex:1;padding:5px;border-radius:5px;border:1px solid #ef4444;
+                  background:rgba(239,68,68,.15);color:#ef4444;font-size:10px;font-weight:700;
+                  cursor:pointer;font-family:var(--mono)">0</button>
+            </div>
+          </div>`;
+      });
+    }
+
+    wrap.innerHTML = html;
+    showToast(`✅ ${signals.length} signaux chargés depuis DynamoDB`, 'success');
+
+  } catch(e) {
+    wrap.innerHTML = `<div style="font-size:11px;color:var(--red);padding:8px">
+      ❌ Erreur chargement signaux : ${e.message}</div>`;
+  }
 }
 
 function manUpdateSpeed(v){
