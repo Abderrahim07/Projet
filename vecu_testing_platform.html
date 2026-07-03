@@ -1575,7 +1575,7 @@ async function manBuildDynamicSignals() {
         const unit = sig.unit || '';
         manDynValues[sig.signal_name] = String(min);
 
-        if(sig.data_type === 'boolean' || (min===0 && max===1)) {
+        if(sig.data_type === 'boolean') {
           // Toggle ON/OFF
           html += `
             <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);
@@ -1681,6 +1681,48 @@ function manSetTurn(v){
     btn.style.borderColor=active?(v===0?'rgba(239,68,68,.35)':'rgba(0,212,255,.3)'):'rgba(255,255,255,.1)';
     btn.style.color=active?(v===0?'#ef4444':'var(--accent)'):'var(--text3)';
   });
+  manUpdateResume();
+}
+
+// ── Fonctions manquantes pour les signaux dynamiques (I/O détectés) ──
+function dynSet(signalName, val){
+  manDynValues[signalName] = String(val);
+  const onBtn  = document.getElementById(`dyn-${signalName}-1`);
+  const offBtn = document.getElementById(`dyn-${signalName}-0`);
+  if(onBtn){
+    onBtn.style.background  = val===1 ? 'rgba(34,197,94,.15)' : 'rgba(255,255,255,.04)';
+    onBtn.style.borderColor = val===1 ? 'rgba(34,197,94,.4)'  : 'rgba(255,255,255,.1)';
+    onBtn.style.color       = val===1 ? '#22c55e' : 'var(--text3)';
+  }
+  if(offBtn){
+    offBtn.style.background  = val===0 ? 'rgba(239,68,68,.1)'  : 'rgba(255,255,255,.04)';
+    offBtn.style.borderColor = val===0 ? 'rgba(239,68,68,.35)' : 'rgba(255,255,255,.1)';
+    offBtn.style.color       = val===0 ? '#ef4444' : 'var(--text3)';
+  }
+  manUpdateResume();
+}
+
+function dynSlider(signalName, val, unit){
+  manDynValues[signalName] = String(val);
+  const lbl = document.getElementById(`dyn-lbl-${signalName}`);
+  if(lbl) lbl.textContent = `${val} ${unit}`;
+  manUpdateResume();
+}
+
+function expSet(signalName, val){
+  manDynValues[`expected_${signalName}`] = String(val);
+  const onBtn  = document.getElementById(`exp-${signalName}-1`);
+  const offBtn = document.getElementById(`exp-${signalName}-0`);
+  if(onBtn){
+    onBtn.style.background  = val===1 ? 'rgba(34,197,94,.2)'  : 'none';
+    onBtn.style.borderColor = val===1 ? '#22c55e' : 'rgba(255,255,255,.08)';
+    onBtn.style.color       = val===1 ? '#22c55e' : 'var(--text3)';
+  }
+  if(offBtn){
+    offBtn.style.background  = val===0 ? 'rgba(239,68,68,.15)' : 'none';
+    offBtn.style.borderColor = val===0 ? '#ef4444' : 'rgba(255,255,255,.08)';
+    offBtn.style.color       = val===0 ? '#ef4444' : 'var(--text3)';
+  }
   manUpdateResume();
 }
 
