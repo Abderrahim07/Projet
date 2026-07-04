@@ -366,6 +366,68 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .scm-btn-confirm{background:var(--accent);color:#000}
 .scm-btn-confirm:hover{opacity:.88}
 .scm-btn-confirm:disabled{opacity:.3;cursor:not-allowed}
+/* ══════════════════════════════════
+   BUILDER — Constructeur manuel drag & drop (page dédiée)
+══════════════════════════════════ */
+#builder-overlay{
+  position:fixed;inset:0;background:#05070A;display:none;
+  z-index:998;flex-direction:column;padding:20px 24px;
+}
+#builder-overlay.open{display:flex}
+.builder-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.builder-title{font-size:15px;font-weight:700;color:var(--text1);display:flex;align-items:center;gap:8px}
+.builder-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.builder-meta{display:flex;gap:10px;margin-bottom:14px}
+.builder-meta input,.builder-meta select{
+  background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);
+  padding:9px 12px;color:var(--text1);font-size:12px;font-family:var(--mono);outline:none;
+}
+.builder-body{
+  flex:1;display:grid;grid-template-columns:230px 1fr;gap:0;
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);
+  overflow:hidden;min-height:0;
+}
+.builder-palette{background:var(--bg3);border-right:1px solid var(--border);padding:14px;overflow-y:auto}
+.palette-group-label{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1.5px;
+  color:var(--text3);text-transform:uppercase;margin:12px 0 8px}
+.palette-group-label:first-child{margin-top:0}
+.palette-item{
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;
+  padding:9px 11px;margin-bottom:7px;cursor:grab;transition:.15s;
+}
+.palette-item:hover{border-color:rgba(0,212,255,.4);background:rgba(0,212,255,.06)}
+.palette-item:active{cursor:grabbing}
+.palette-item.used{opacity:.3;cursor:not-allowed;pointer-events:none}
+.palette-item-name{font-size:10.5px;font-weight:700;font-family:var(--mono);color:var(--text1)}
+.palette-item-desc{font-size:9px;color:var(--text3);margin-top:3px;line-height:1.4}
+.builder-canvas{
+  position:relative;overflow:auto;
+  background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);
+  background-size:22px 22px;
+}
+.canvas-hint{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  color:var(--text3);font-size:12px;text-align:center;pointer-events:none;
+  border:2px dashed rgba(255,255,255,.08);border-radius:12px;padding:24px 40px;
+}
+.canvas-widget{
+  position:absolute;width:190px;background:var(--bg3);
+  border:1px solid rgba(0,212,255,.35);border-radius:10px;
+  box-shadow:0 10px 30px rgba(0,0,0,.5);overflow:hidden;user-select:none;
+}
+.canvas-widget.output-widget{border-color:rgba(0,229,160,.35)}
+.widget-handle{
+  background:rgba(0,212,255,.12);padding:6px 10px;display:flex;align-items:center;
+  justify-content:space-between;cursor:grab;font-family:var(--mono);font-size:10px;
+  font-weight:700;color:var(--accent);
+}
+.canvas-widget.output-widget .widget-handle{background:rgba(0,229,160,.12);color:var(--green)}
+.widget-handle:active{cursor:grabbing}
+.widget-remove{cursor:pointer;color:var(--text3);font-size:13px;padding:0 2px;line-height:1}
+.widget-remove:hover{color:var(--red)}
+.widget-body{padding:10px 11px}
+.widget-desc{font-size:9px;color:var(--text3);margin-bottom:8px;line-height:1.4}
+
 </style>
 </head>
 <body>
@@ -628,6 +690,39 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
                color:#000;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--mono)">
         ▶ Confirmer et passer au test
       </button>
+    </div>
+
+    <!-- Génération par IA (visible si stratégie IA sélectionnée) -->
+    <div class="card" id="ai-generate-card" style="display:none">
+      <div class="card-head">
+        <div class="card-title">🤖 Génération par IA</div>
+        <div class="card-sub">Claude (AWS Bedrock) analyse vos requirements et signaux I/O pour générer MC/DC + tests BVA</div>
+      </div>
+
+      <button class="btn-primary" id="btn-ai-generate" onclick="generateTestsWithAI()"
+        style="width:100%;justify-content:center">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2a4 4 0 0 1 4 4v1a4 4 0 0 1-4 4 4 4 0 0 1-4-4V6a4 4 0 0 1 4-4z"/>
+          <path d="M6 12v2a6 6 0 0 0 12 0v-2M12 20v2"/>
+        </svg>
+        Générer les tests avec Claude
+      </button>
+
+      <div id="ai-status-bar" style="display:none;margin-top:12px;padding:12px 16px;
+           background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);
+           font-family:var(--mono);font-size:11px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div id="ai-dot" style="width:8px;height:8px;border-radius:50%;background:var(--amber)"></div>
+            <span id="ai-status-text" style="color:var(--text2)">En attente...</span>
+          </div>
+        </div>
+        <div style="margin-top:8px;height:3px;background:var(--border2);border-radius:2px;overflow:hidden">
+          <div id="ai-progress" style="height:100%;width:0%;
+               background:linear-gradient(90deg,var(--accent),var(--purple));
+               border-radius:2px;transition:width .5s"></div>
+        </div>
+      </div>
     </div>
 
     <!-- Scénarios disponibles (visible si upload CSV ou stratégie IA) -->
@@ -1141,7 +1236,7 @@ function renderScenarioList(){
       :sc.status==='fail'?'<span class="tag tag-red">FAIL</span>'
       :sc.status==='running'?'<span class="tag tag-cyan">EN COURS</span>'
       :'<span class="tag tag-gray">EN ATTENTE</span>';
-    const hasVector = testVectors.find(v => v.scenario === sc.name) || sc.test_vector;
+    const hasVector = testVectors.find(v => v.scenario === sc.name) || sc.test_vector || testVectors[i];
     item.innerHTML = `
       <div class="video-thumb-mini" id="s3thumb-${i}">
         <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg4)">
@@ -1418,16 +1513,264 @@ function renderTVPreview(headers,rows){
 }
 
 // ── Strategy
+// ══════════════════════════════════════════════
+// BUILDER — Constructeur manuel drag & drop (page dédiée)
+// ══════════════════════════════════════════════
+let builderSignals   = [];   // signaux disponibles dans la palette
+let builderValues    = {};   // valeurs courantes des widgets posés {signal_name: value}
+let builderWidgetOf  = {};   // signal_name -> élément widget DOM (pour repositionnement/suppression)
+let builderWidgetSeq = 0;
+
+async function openBuilder(){
+  document.getElementById('builder-overlay').classList.add('open');
+  document.getElementById('builder-sc-name').value = '';
+  builderPopulateVideoSelect();
+  await builderLoadSignals();
+}
+
+function closeBuilder(){
+  document.getElementById('builder-overlay').classList.remove('open');
+}
+
+function builderPopulateVideoSelect(){
+  const sel = document.getElementById('builder-sc-video');
+  sel.innerHTML = '<option value="">— Vidéo scénario associée —</option>';
+  scenarios.forEach((sc,i)=>{
+    const opt = document.createElement('option');
+    opt.value = i; opt.textContent = `SC${i+1} — ${sc.name}`;
+    sel.appendChild(opt);
+  });
+}
+
+// ── Charge les signaux réels (DynamoDB via /signals), fallback sur la
+// bibliothèque générique si aucun fichier I/O n'a été uploadé
+async function builderLoadSignals(){
+  // Reset zone de travail à chaque ouverture
+  const canvas = document.getElementById('builder-canvas');
+  canvas.querySelectorAll('.canvas-widget').forEach(w=>w.remove());
+  document.getElementById('canvas-hint').style.display = 'block';
+  builderValues = {}; builderWidgetOf = {};
+
+  if(!PROJECT_ID || DEMO){
+    builderSignals = GENERIC_SIGNAL_LIBRARY;
+    renderBuilderPalette();
+    return;
+  }
+
+  try{
+    const resp = await fetch(`${API}/projects/${PROJECT_ID}/signals`);
+    let data   = JSON.parse(await resp.text());
+    if(data.body && typeof data.body==='string') data = JSON.parse(data.body);
+    const signals = data.signals || [];
+    builderSignals = signals.length > 0 ? signals : GENERIC_SIGNAL_LIBRARY;
+  }catch(e){
+    console.warn('[BUILDER SIGNALS]', e.message);
+    builderSignals = GENERIC_SIGNAL_LIBRARY;
+  }
+  renderBuilderPalette();
+}
+
+function renderBuilderPalette(){
+  const list = document.getElementById('builder-palette-list');
+  const inputs  = builderSignals.filter(s => s.direction === 'INPUT');
+  const outputs = builderSignals.filter(s => s.direction === 'OUTPUT');
+
+  const itemHtml = sig => `
+    <div class="palette-item" id="palette-${sig.signal_name}"
+         draggable="true" ondragstart="builderDragStart(event,'${sig.signal_name}')">
+      <div class="palette-item-name">${sig.signal_name}</div>
+      <div class="palette-item-desc">${sig.description || ''}</div>
+    </div>`;
+
+  let html = '<div class="palette-group-label">Entrées</div>' + inputs.map(itemHtml).join('');
+  html += '<div class="palette-group-label">Sorties</div>' + outputs.map(itemHtml).join('');
+  list.innerHTML = html;
+}
+
+// ── Drag & drop depuis la palette vers le canvas
+function builderDragStart(ev, signalName){
+  ev.dataTransfer.setData('text/plain', signalName);
+  ev.dataTransfer.effectAllowed = 'move';
+}
+
+function builderDrop(ev){
+  ev.preventDefault();
+  const name = ev.dataTransfer.getData('text/plain');
+  if(!name || builderWidgetOf[name]) return; // déjà posé
+  const sig = builderSignals.find(s => s.signal_name === name);
+  if(!sig) return;
+
+  const canvas = document.getElementById('builder-canvas');
+  const rect   = canvas.getBoundingClientRect();
+  const x = Math.max(0, ev.clientX - rect.left + canvas.scrollLeft - 95);
+  const y = Math.max(0, ev.clientY - rect.top  + canvas.scrollTop  - 20);
+
+  createCanvasWidget(sig, x, y);
+}
+
+// ── Crée un widget librement positionnable sur le canvas
+function createCanvasWidget(sig, x, y){
+  const canvas = document.getElementById('builder-canvas');
+  document.getElementById('canvas-hint').style.display = 'none';
+
+  const isOutput = sig.direction === 'OUTPUT';
+  const isBool   = (sig.data_type || '').toLowerCase() === 'boolean';
+  const min = parseFloat(sig.min_value) || 0;
+  const max = parseFloat(sig.max_value) || 1;
+  const valueKey = isOutput ? `expected_${sig.signal_name}` : sig.signal_name;
+
+  const widget = document.createElement('div');
+  widget.className = 'canvas-widget' + (isOutput ? ' output-widget' : '');
+  widget.style.left = x + 'px';
+  widget.style.top  = y + 'px';
+  widget.dataset.signal = sig.signal_name;
+
+  let controlHtml;
+  if(isBool || isOutput){
+    // Toggle 0/1 (sorties toujours en 0/1, entrées booléennes aussi)
+    builderValues[valueKey] = '0';
+    controlHtml = `
+      <div style="display:flex;gap:6px">
+        <button class="scm-toggle" onclick="builderSetToggle(this,'${valueKey}','1')"
+          style="flex:1;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,.1);
+            background:rgba(255,255,255,.04);color:var(--text3);font-size:10px;font-weight:700;
+            cursor:pointer;font-family:var(--mono)">1</button>
+        <button class="scm-toggle on" onclick="builderSetToggle(this,'${valueKey}','0')"
+          style="flex:1;padding:6px;border-radius:6px;border:1px solid rgba(239,68,68,.35);
+            background:rgba(239,68,68,.1);color:#ef4444;font-size:10px;font-weight:700;
+            cursor:pointer;font-family:var(--mono)">0</button>
+      </div>`;
+  } else {
+    builderValues[valueKey] = String(min);
+    const wid = 'w'+(builderWidgetSeq++);
+    controlHtml = `
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:9px;color:var(--text3)">${min}</span>
+        <span id="${wid}-lbl" style="font-size:10px;color:var(--accent);font-family:var(--mono)">${min} ${sig.unit||''}</span>
+        <span style="font-size:9px;color:var(--text3)">${max}</span>
+      </div>
+      <input type="range" min="${min}" max="${max}" value="${min}" step="${(max-min)/100 || 1}"
+        style="width:100%;height:3px;background:rgba(255,255,255,.1);border-radius:10px;
+          outline:none;-webkit-appearance:none;cursor:pointer"
+        oninput="builderSetSlider('${valueKey}',this.value,'${wid}','${sig.unit||''}')"/>`;
+  }
+
+  widget.innerHTML = `
+    <div class="widget-handle" onmousedown="builderStartDrag(event,'${sig.signal_name}')">
+      <span>${sig.signal_name}</span>
+      <span class="widget-remove" onclick="removeBuilderWidget('${sig.signal_name}')">✕</span>
+    </div>
+    <div class="widget-body">
+      <div class="widget-desc">${sig.description || ''}</div>
+      ${controlHtml}
+    </div>`;
+
+  canvas.appendChild(widget);
+  builderWidgetOf[sig.signal_name] = widget;
+
+  // Griser l'item dans la palette
+  const paletteItem = document.getElementById(`palette-${sig.signal_name}`);
+  if(paletteItem) paletteItem.classList.add('used');
+}
+
+function removeBuilderWidget(signalName){
+  const widget = builderWidgetOf[signalName];
+  if(widget) widget.remove();
+  delete builderWidgetOf[signalName];
+
+  const sig = builderSignals.find(s => s.signal_name === signalName);
+  const valueKey = sig && sig.direction === 'OUTPUT' ? `expected_${signalName}` : signalName;
+  delete builderValues[valueKey];
+
+  const paletteItem = document.getElementById(`palette-${signalName}`);
+  if(paletteItem) paletteItem.classList.remove('used');
+
+  const canvas = document.getElementById('builder-canvas');
+  if(canvas.querySelectorAll('.canvas-widget').length === 0){
+    document.getElementById('canvas-hint').style.display = 'block';
+  }
+}
+
+function builderSetToggle(btn, key, val){
+  builderValues[key] = val;
+  const row = btn.parentElement;
+  [...row.children].forEach(b=>{
+    const active = b === btn;
+    b.style.background  = active ? (val==='1' ? 'rgba(34,197,94,.15)' : 'rgba(239,68,68,.1)')  : 'rgba(255,255,255,.04)';
+    b.style.borderColor = active ? (val==='1' ? 'rgba(34,197,94,.4)'  : 'rgba(239,68,68,.35)') : 'rgba(255,255,255,.1)';
+    b.style.color       = active ? (val==='1' ? '#22c55e' : '#ef4444') : 'var(--text3)';
+  });
+}
+
+function builderSetSlider(key, val, wid, unit){
+  builderValues[key] = String(val);
+  const lbl = document.getElementById(`${wid}-lbl`);
+  if(lbl) lbl.textContent = `${val} ${unit}`;
+}
+
+// ── Repositionnement libre d'un widget sur le canvas (mousedown/move/up)
+let builderDrag = null;
+function builderStartDrag(ev, signalName){
+  const widget = builderWidgetOf[signalName];
+  if(!widget) return;
+  builderDrag = {
+    widget,
+    offsetX: ev.clientX - widget.offsetLeft,
+    offsetY: ev.clientY - widget.offsetTop
+  };
+  ev.preventDefault();
+}
+document.addEventListener('mousemove', ev=>{
+  if(!builderDrag) return;
+  const canvas = document.getElementById('builder-canvas');
+  let x = ev.clientX - builderDrag.offsetX + canvas.scrollLeft;
+  let y = ev.clientY - builderDrag.offsetY + canvas.scrollTop;
+  x = Math.max(0, x); y = Math.max(0, y);
+  builderDrag.widget.style.left = x + 'px';
+  builderDrag.widget.style.top  = y + 'px';
+});
+document.addEventListener('mouseup', ()=>{ builderDrag = null; });
+
+// ── Confirmation → crée le vecteur de test et lance le bench
+function builderConfirmAndLaunch(){
+  const nameInput = document.getElementById('builder-sc-name');
+  const videoSel  = document.getElementById('builder-sc-video');
+  const scName    = nameInput?.value || 'custom_scenario';
+  const videoIdx  = parseInt(videoSel?.value ?? '-1');
+
+  if(Object.keys(builderValues).length === 0){
+    showToast('⚠️ Glissez au moins un signal dans la zone de travail','error');
+    return;
+  }
+  if(videoIdx < 0){
+    showToast('⚠️ Sélectionnez une vidéo scénario','error');
+    return;
+  }
+
+  const tv = { scenario: scName, ...builderValues };
+  const sc = scenarios[videoIdx];
+  sc.test_vector = tv;
+  testVectors = testVectors.filter(v => v.scenario !== sc.name);
+  tv.scenario = sc.name;
+  testVectors.push(tv);
+
+  showToast(`✅ Vecteur créé pour ${sc.name}`,'success');
+  closeBuilder();
+  openBench(videoIdx);
+}
+
 function selectStrategy(n){
   strategy=n;
   document.getElementById('str0').classList.toggle('selected',n===0);
   document.getElementById('str1').classList.toggle('selected',n===1);
   // Mes propres tests
   document.getElementById('manual-tests-card').style.display  = n===0?'block':'none';
-  // IA → afficher directement la liste scénarios
+  // IA → afficher le bouton de génération + la liste scénarios
+  document.getElementById('ai-generate-card').style.display   = n===1?'block':'none';
   document.getElementById('scenarios-list-card').style.display= n===1?'block':'none';
   // Reset sous-mode
   if(n===0){
+    document.getElementById('ai-generate-card').style.display = 'none';
     document.getElementById('sub-upload-card').style.display  = 'none';
     document.getElementById('sub-manual-card').style.display  = 'none';
     document.getElementById('scenarios-list-card').style.display='none';
@@ -1438,17 +1781,111 @@ function selectStrategy(n){
   }
 }
 
+// ══════════════════════════════════════════════
+// GÉNÉRATION DE TESTS PAR IA (Bedrock — vecu-generate-tests)
+// ══════════════════════════════════════════════
+function setAiStatus(type, message, progress){
+  const bar  = document.getElementById('ai-status-bar');
+  const dot  = document.getElementById('ai-dot');
+  const text = document.getElementById('ai-status-text');
+  const prog = document.getElementById('ai-progress');
+  bar.style.display = 'block';
+  text.textContent  = message;
+  prog.style.width  = progress+'%';
+  const colors = { running:'var(--amber)', done:'var(--green)', failed:'var(--red)' };
+  dot.style.background = colors[type] || 'var(--text3)';
+  dot.style.animation   = type==='running' ? 'pulse 1s infinite' : 'none';
+  text.style.color      = colors[type] || 'var(--text2)';
+}
+
+async function generateTestsWithAI(){
+  if(!PROJECT_ID && !DEMO){ showToast('⚠️ Crée d\'abord un projet','error'); return; }
+
+  const btn = document.getElementById('btn-ai-generate');
+  btn.disabled = true;
+  setAiStatus('running','Démarrage du job de génération...',5);
+
+  if(DEMO){
+    // Simulation — utile pour tester le flow sans backend Bedrock déployé
+    await sleep(800);  setAiStatus('running','Lecture de l\'interface I/O...',20);
+    await sleep(1000); setAiStatus('running','Génération MC/DC...',35);
+    await sleep(1000); setAiStatus('running','Indexation RAG...',50);
+    await sleep(1500); setAiStatus('running','Génération via Claude (Bedrock)...',75);
+    await sleep(1200); setAiStatus('running','Conversion des scénarios...',90);
+    await sleep(600);
+    const fakeVectors = [
+      {scenario:'MCDC_BASE', vehicle_speed:'54', system_ct:'1', expected_System_Active:'1'},
+      {scenario:'MCDC_V1',   vehicle_speed:'0',  system_ct:'1', expected_System_Active:'0'},
+      {scenario:'TC-ST01-001', vehicle_speed:'12', system_ct:'1', expected_System_Active:'1', expected_Warning_Left:'0'}
+    ];
+    testVectors = fakeVectors;
+    setAiStatus('done', `✅ ${fakeVectors.length} tests générés (simulation)`, 100);
+    showToast(`✅ ${fakeVectors.length} tests générés — associés aux scénarios vidéo`,'success');
+    renderScenarioList();
+    btn.disabled = false;
+    return;
+  }
+
+  try{
+    const resp = await fetch(`${API}/projects/${PROJECT_ID}/generate-tests`, { method:'POST' });
+    let data = JSON.parse(await resp.text());
+    if(data.body && typeof data.body==='string') data = JSON.parse(data.body);
+    if(!data.job_id) throw new Error('job_id manquant');
+
+    setAiStatus('running','Job lancé — génération en cours (~1-3 min)...',15);
+    await pollGenerateStatus(data.job_id);
+
+  }catch(e){
+    setAiStatus('failed','❌ Erreur : '+e.message,0);
+    showToast('❌ '+e.message,'error',6000);
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+async function pollGenerateStatus(jobId){
+  const maxAttempts = 60; // 60 × 5s = 5 min
+  for(let i=0; i<maxAttempts; i++){
+    await sleep(5000);
+    try{
+      const resp = await fetch(`${API}/projects/${PROJECT_ID}/generate-status?job_id=${jobId}`);
+      let data = JSON.parse(await resp.text());
+      if(data.body && typeof data.body==='string') data = JSON.parse(data.body);
+
+      if(data.status === 'RUNNING'){
+        setAiStatus('running', data.message || 'En cours...', data.progress || 50);
+
+      } else if(data.status === 'DONE'){
+        const result = data.result || {};
+        testVectors  = result.test_vectors || [];
+        setAiStatus('done', `✅ ${result.total || testVectors.length} tests générés (MC/DC: ${result.mcdc_count||0}, REQ: ${result.req_count||0})`, 100);
+        showToast(`✅ ${testVectors.length} tests générés — associés aux scénarios vidéo`,'success');
+        renderScenarioList();
+        return;
+
+      } else if(data.status === 'FAILED'){
+        setAiStatus('failed', '❌ '+(data.message||'Échec de la génération'), 0);
+        showToast('❌ Génération échouée','error',6000);
+        return;
+      }
+    }catch(e){
+      console.warn('[POLL AI]', e.message);
+    }
+  }
+  setAiStatus('failed','⏱ Timeout après 5 min',0);
+}
+
 function selectSubMode(mode){
   document.getElementById('sub-upload').classList.toggle('selected', mode==='upload');
   document.getElementById('sub-manual').classList.toggle('selected', mode==='manual');
   document.getElementById('sub-upload-card').style.display  = mode==='upload'?'block':'none';
-  document.getElementById('sub-manual-card').style.display  = mode==='manual'?'block':'none';
+  // "Créer manuellement" → page dédiée plein écran (builder drag & drop),
+  // au lieu de l'ancienne carte inline
+  document.getElementById('sub-manual-card').style.display  = 'none';
   // La liste scénarios n'apparaît que pour upload
   document.getElementById('scenarios-list-card').style.display = mode==='upload'?'block':'none';
   if(mode==='manual'){
-    manPopulateVideoSelect();
-    manBuildDynamicSignals();
-    manUpdateResume();
+    openBuilder();
   }
 }
 
@@ -2202,6 +2639,47 @@ function launchAllTests(){
 }
 function clearLog(){ document.getElementById('bench-log-body').innerHTML=''; }
 </script>
+<!-- ════════════════════════════════════
+     BUILDER — Constructeur manuel drag & drop
+════════════════════════════════════ -->
+<div id="builder-overlay">
+  <div class="builder-header">
+    <div>
+      <div class="builder-title">🎛 Constructeur de vecteur de test</div>
+      <div class="builder-sub">Glissez les signaux depuis la palette vers la zone de travail, positionnez-les comme vous voulez</div>
+    </div>
+    <button class="btn-secondary" onclick="closeBuilder()">✕ Fermer</button>
+  </div>
+
+  <div class="builder-meta">
+    <input type="text" id="builder-sc-name" placeholder="Nom du scénario (ex: scene_nominal_custom)" style="flex:1"/>
+    <select id="builder-sc-video" style="width:260px">
+      <option value="">— Vidéo scénario associée —</option>
+    </select>
+  </div>
+
+  <div class="builder-body">
+    <div class="builder-palette" id="builder-palette" ondragover="event.preventDefault()">
+      <div id="builder-palette-list">
+        <div style="font-size:11px;color:var(--text2);padding:8px">⏳ Chargement des signaux...</div>
+      </div>
+    </div>
+    <div class="builder-canvas" id="builder-canvas"
+         ondragover="event.preventDefault()" ondrop="builderDrop(event)">
+      <div class="canvas-hint" id="canvas-hint">
+        Glissez un signal ici<br/>pour créer un contrôle
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-secondary" onclick="closeBuilder()">Annuler</button>
+    <button class="btn-launch" onclick="builderConfirmAndLaunch()">
+      ▶ Confirmer et passer au test
+    </button>
+  </div>
+</div>
+
 <!-- ════════════════════════════════════
      SCENARIO MODAL
 ════════════════════════════════════ -->
